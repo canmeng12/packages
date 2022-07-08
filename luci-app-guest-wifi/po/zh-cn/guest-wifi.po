@@ -5,7 +5,7 @@ msgid "Guest-wifi"
 msgstr "访客网络"
 
 msgid "Config"
-msgstr "设置"
+msgstr "设置1"
 
 msgid "You can set guest wifi here. The wifi will be disconnected when enabling/disabling. When modifying the password, first disable the guest wifi, and then do the modification, save and apply. Finally check both Enable and Create, save and apply."
 msgstr "在此可以设置访客网络。启用/禁用访客网络时wifi会断开。当修改访客名称密码时，先禁用访客网络并保存应用，然后修改后保存应用，最后同时勾选启用和创建并保存应用。"
