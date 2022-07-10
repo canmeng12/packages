@@ -6,12 +6,14 @@
 
 include $(TOPDIR)/rules.mk
 
-LUCI_TITLE:=luci-app-guest-wifi
+LUCI_TITLE:=LuCI support for guest-wifi
 LUCI_DEPENDS:=
 LUCI_PKGARCH:=all
+
+PKG_NAME:=luci-app-guest-wifi
 PKG_VERSION:=1.0
 PKG_RELEASE:=1
 
-include $(TOPDIR)/feeds/luci/luci.mk
+include ../../luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature
