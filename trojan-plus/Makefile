@@ -52,13 +52,14 @@ CMAKE_OPTIONS += \
 	-DBoost_NO_BOOST_CMAKE=ON
 
 define Package/trojan-plus
-	SECTION:=net
-	CATEGORY:=Network
-	TITLE:=An unidentifiable mechanism that helps you bypass GFW. It's compatible with original trojan with experimental features.
-	URL:=https://github.com/Trojan-Plus-Group/trojan-plus
-	DEPENDS:= \
-		+libpthread +libstdcpp +libopenssl \
-		+boost +boost-system +boost-program_options
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=Web Servers/Proxies
+  TITLE:=An unidentifiable mechanism that helps you bypass GFW. It's compatible with original trojan with experimental features.
+  URL:=https://github.com/Trojan-Plus-Group/trojan-plus
+  DEPENDS:= \
+    +libpthread +libstdcpp +libopenssl \
+    +boost +boost-system +boost-program_options
 endef
 
 define Package/trojan-plus/install
@@ -67,3 +68,4 @@ define Package/trojan-plus/install
 endef
 
 $(eval $(call BuildPackage,trojan-plus))
+
