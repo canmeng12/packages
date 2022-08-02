@@ -24,6 +24,7 @@
 | luci-app-turboacc     | Turbo ACC Center         | Turbo ACC 网络加速   |
 | luci-app-wolplus      | wolplus                  | 网络唤醒++           |
 | luci-app-wrtbwmon     | wrtbwmon                 | 流量统计插件         |
-| luci-theme-argon      | argon theme              | 修改老竭力主题名     |
+| luci-theme-argon      | argon theme              | argon主题     |
+| luci-theme-edge       |edge theme    | edge|
 
 感谢各位大佬
