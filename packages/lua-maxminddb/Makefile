@@ -28,7 +28,7 @@ define Package/lua-maxminddb
   SECTION:=lang
   CATEGORY:=Languages
   TITLE:=libmaxminddb bindings for lua
-  URL:=https://github.com/jerrykuku/lua-maxminddb
+  URL:=https://github.com/fabled/lua-maxminddb
   DEPENDS:=+lua +libmaxminddb
 endef
 
