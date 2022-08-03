@@ -16,7 +16,7 @@ LUCI_DESCRIPTION:=LuCI support for AdGuardHome
 define Package/$(PKG_NAME)/config
 config PACKAGE_$(PKG_NAME)_INCLUDE_binary
 	bool "Include Binary File"
-	default n
+	default y
 endef
 
 PKG_CONFIG_DEPENDS:= CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_binary
@@ -24,7 +24,7 @@ PKG_CONFIG_DEPENDS:= CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_binary
 define Package/luci-app-adguardhome/conffiles
 /usr/share/AdGuardHome/links.txt
 /etc/config/AdGuardHome
-#/etc/AdGuardHome.yaml
+/etc/AdGuardHome.yaml
 endef
 
 define Package/luci-app-adguardhome/postinst
