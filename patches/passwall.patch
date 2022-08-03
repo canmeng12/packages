@@ -1,0 +1,46 @@
+diff --git a/luci-app-passwall/Makefile b/luci-app-passwall/Makefile
+index a2d0fee..52a6a5d 100644
+--- a/luci-app-passwall/Makefile
++++ b/luci-app-passwall/Makefile
+@@ -67,7 +67,7 @@ config PACKAGE_$(PKG_NAME)_Transparent_Proxy
+ 	select PACKAGE_ipset
+ 	select PACKAGE_ipt2socks
+ 	select PACKAGE_iptables
+-	select PACKAGE_iptables-legacy
++	select PACKAGE_iptables-nft
+ 	select PACKAGE_iptables-mod-conntrack-extra
+ 	select PACKAGE_iptables-mod-iprange
+ 	select PACKAGE_iptables-mod-socket
+@@ -89,7 +89,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Haproxy
+ 
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Hysteria
+ 	bool "Include Hysteria"
+-	default n
++	default y
+ 
+ config PACKAGE_$(PKG_NAME)_INCLUDE_IPv6_Nat
+ 	depends on PACKAGE_ip6tables
+@@ -145,7 +145,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray
+ 
+ config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
+ 	bool "Include V2ray-Plugin (Shadowsocks Plugin)"
+-	default y if aarch64||arm||i386||x86_64
++	default n if aarch64||arm||i386||x86_64
+ 
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Xray
+ 	bool "Include Xray"
+diff --git a/luci-app-passwall/root/usr/share/passwall/0_default_config b/luci-app-passwall/root/usr/share/passwall/0_default_config
+index 5f1adda..6d975ee 100644
+--- a/luci-app-passwall/root/usr/share/passwall/0_default_config
++++ b/luci-app-passwall/root/usr/share/passwall/0_default_config
+@@ -46,8 +46,8 @@ config global_rules
+ 	option chnroute_update '1'
+ 	option chnroute6_update '1'
+ 	option gfwlist_update '1'
+-	option geosite_update '0'
+-	option geoip_update '0'
++	option geosite_update '1'
++	option geoip_update '1'
+ 	list gfwlist_url 'https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/gfw.txt'
+ 	list chnroute_url 'https://ispip.clang.cn/all_cn.txt'
+ 	list chnroute6_url 'https://ispip.clang.cn/all_cn_ipv6.txt'
