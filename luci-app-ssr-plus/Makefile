@@ -64,8 +64,6 @@ LUCI_DEPENDS:= \
 define Package/$(PKG_NAME)/config
 select PACKAGE_luci-lib-ipkg if PACKAGE_$(PKG_NAME)
 
-menu "Configuration"
-
 choice
 	prompt "Shadowsocks Client Selection"
 	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
@@ -78,9 +76,10 @@ choice
 
 	config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
 	bool "Shadowsocks-rust"
-	depends on aarch64||arm||i386||mips||mipsel||x86_64
-	depends on !(TARGET_x86_geode||TARGET_x86_legacy)
+
 endchoice
+
+menu "Configuration"
 
 choice
 	prompt "Shadowsocks Server Selection"
@@ -94,8 +93,6 @@ choice
 
 	config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server
 	bool "Shadowsocks-rust"
-	depends on aarch64||arm||i386||mips||mipsel||x86_64
-	depends on !(TARGET_x86_geode||TARGET_x86_legacy)
 endchoice
 
 choice
@@ -178,6 +175,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Trojan
 	bool "Include Trojan"
 	select PACKAGE_$(PKG_NAME)_INCLUDE_IPT2Socks
 	default n
+
 endmenu
 endef
 
