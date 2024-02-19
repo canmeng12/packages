@@ -1050,9 +1050,6 @@ start() {
 	echolog "----------start------------"
 	mkdir -p /var/run /var/lock /var/log /tmp/dnsmasq.d $TMP_BIN_PATH $TMP_DNSMASQ_PATH
 	echo "conf-dir=${TMP_DNSMASQ_PATH}" >"/tmp/dnsmasq.d/dnsmasq-ssrplus.conf"
-	if [ "$(uci_get_by_type global pdnsd_enable 0)" == "3" ]; then
-		[ -z "$(opkg status mosdns 2>/dev/null | grep 'Status' | awk -F ': ' '{print $2}' 2>/dev/null)" ] && echolog "依赖 mosdns未安装..."
-	fi
 	if load_config; then
 		Start_Run
 		start_rules

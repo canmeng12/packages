@@ -24,8 +24,8 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_ShadowsocksR_Libev_Server \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Simple_Obfs \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_SingBox \
-	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Xray \
+	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
 
 LUCI_TITLE:=LuCI support for PassWall 2
@@ -116,7 +116,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Server
 config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
 	bool "Include Shadowsocks Rust Client"
 	depends on aarch64||arm||i386||mips||mipsel||x86_64
-	default y 
+	default y
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server
 	bool "Include Shadowsocks Rust Server"
@@ -137,7 +137,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Simple_Obfs
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_SingBox
 	bool "Include Sing-Box"
-	default y if aarch64||arm||i386||x86_64
+	default y
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client
 	bool "Include tuic-client"
