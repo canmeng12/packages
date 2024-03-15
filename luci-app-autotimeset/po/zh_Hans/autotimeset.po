@@ -11,6 +11,12 @@ msgstr "定时执行任务/开机启动任务设置"
 msgid "Scheduled Setting"
 msgstr "任务设置"
 
+msgid "Clear Log"
+msgstr "清理log"
+
+msgid "time Setting"
+msgstr "定时设置"
+
 msgid "Test/Verify Settings"
 msgstr "测试/验证设置"
 
