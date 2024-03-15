@@ -5,8 +5,11 @@ function index()
 	if not nixio.fs.access("/etc/config/autotimeset") then
 		return
 	end
-        entry({"admin", "services", "autotimeset"}, alias("admin", "services", "autotimeset", "base"), _("time Setting"), 20).dependent = true
-        entry({"admin", "services", "autotimeset", "base"}, cbi("autotimeset/base"),  _("time Setting"), 1).leaf = true
+        entry({"admin", "services"}, firstchild(), "services", 44).dependent = false
+        local e = entry({"admin", "services", "autotimeset"}, alias("admin", "services", "autotimeset", "base"), _("Scheduled Setting"), 20)
+	e.dependent = false
+	e.acl_depends = { "luci-app-autotimeset" }
+        entry({"admin", "services", "autotimeset", "base"}, cbi("autotimeset/base"),  _("Scheduled Setting"), 1).leaf = true
         entry({"admin", "services", "autotimeset", "log"}, form("autotimeset/log"), _("Log"), 2).leaf = true
         entry({"admin","services","autotimeset","dellog"},call("dellog"))
         entry({"admin","services","autotimeset","getlog"},call("getlog"))
