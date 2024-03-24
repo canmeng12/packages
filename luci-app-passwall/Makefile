@@ -127,7 +127,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Trojan_Plus
 	select PACKAGE_trojan-plus
 	default n
 
-config PACKA GE_$(PKG_NAME)_INCLUDE_tuic_client
+config PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client
 	bool "Include tuic-client"
 	depends on aarch64||arm||i386||x86_64
 	select PACKAGE_tuic-client
