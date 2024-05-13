@@ -19,10 +19,11 @@
 | luci-app-oaf          | App Filter               | 应用过滤             |
 | luci-app-openclash    | openclash proxy          | clash 的图形代理软件 |
 | luci-app-passwall     | passwall proxy           | passwall 代理软件    |
-| luci-app-passwall2    | passwall2 proxy           | passwall2 代理软件    |
+| luci-app-passwall2    | passwall2 proxy          | passwall2 代理软件  |
 | luci-app-ramfree      | Release Ram              | 释放内存             |
 | luci-app-ssr-plus     | ssr-plus proxy           | ssr-plus 代理软件    |
 | luci-app-turboacc     | Turbo ACC Center         | Turbo ACC 网络加速   |
+| luci-app-webadmin     | webadminWeb              |管理页面设置          |
 | luci-app-wolplus      | wolplus                  | 网络唤醒++           |
 | luci-app-wrtbwmon     | wrtbwmon                 | 流量统计插件         |
 | luci-theme-argon      | argon theme              | argon主题     |
