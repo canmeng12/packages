@@ -20,7 +20,6 @@
 | luci-app-ssr-plus     | ssr-plus proxy           | ssr-plus 代理软件    |
 
 
-passwall2把xray修改为可以自己选择
 自动同步更新
 感谢各位大佬
 
