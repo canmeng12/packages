@@ -83,8 +83,9 @@ endchoice
 
 choice
 	prompt "Shadowsocks Client Selection"
-	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
-	
+	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client if aarch64 || x86_64
+	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Client
+
 	config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_NONE_Client
 	bool "None"
 
@@ -93,14 +94,14 @@ choice
 
 	config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
 	bool "Shadowsocks-rust"
-
+	depends on aarch64||arm||i386||mips||mipsel||x86_64
+	depends on !(TARGET_x86_geode||TARGET_x86_legacy)
 endchoice
-
-menu "Configuration"
 
 choice
 	prompt "Shadowsocks Server Selection"
-	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server
+	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server if aarch64
+	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Server if i386||x86_64||arm
 	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_NONE_Server
 
 	config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_NONE_Server
@@ -111,12 +112,13 @@ choice
 
 	config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server
 	bool "Shadowsocks-rust"
+	depends on aarch64||arm||i386||mips||mipsel||x86_64
+	depends on !(TARGET_x86_geode||TARGET_x86_legacy)
 endchoice
 
 choice
 	prompt "V2ray-core Selection"
-	default PACKAGE_$(PKG_NAME)_INCLUDE_Xray
-	default PACKAGE_$(PKG_NAME)_INCLUDE_V2ray
+	default PACKAGE_$(PKG_NAME)_INCLUDE_Xray if aarch64||arm||i386||x86_64
 	default PACKAGE_$(PKG_NAME)_INCLUDE_NONE_V2RAY
 
 	config PACKAGE_$(PKG_NAME)_INCLUDE_NONE_V2RAY
@@ -189,14 +191,13 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_ShadowsocksR_Libev_Client
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_ShadowsocksR_Libev_Server
 	bool "Include ShadowsocksR Libev Server"
-	default n
+	default y if i386||x86_64||arm
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_Trojan
 	bool "Include Trojan"
 	select PACKAGE_$(PKG_NAME)_INCLUDE_IPT2Socks
 	default n
 
-endmenu
 endef
 
 
