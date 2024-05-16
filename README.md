@@ -30,7 +30,6 @@
 | luci-theme-edge       |edge theme    | edge|
 |luci-app-bypass|bypass|bypass上网|
 
-passwall2把xray修改为可以自己选择
 自动同步更新
 感谢各位大佬
 
