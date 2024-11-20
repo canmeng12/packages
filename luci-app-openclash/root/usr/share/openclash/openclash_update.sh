@@ -30,7 +30,7 @@ LAST_VER=$(sed -n 1p "$LAST_OPVER" 2>/dev/null |sed "s/^v//g" |tr -d "\n")
 if [ -x "/bin/opkg" ]; then
    OP_CV=$(rm -f /var/lock/opkg.lock && opkg status luci-app-openclash 2>/dev/null |grep 'Version' |awk -F 'Version: ' '{print $2}' |awk -F '.' '{print $2$3}' 2>/dev/null)
 elif [ -x "/usr/bin/apk" ]; then
-   OP_CV=$(apk list luci-app-openclash |grep 'installed' | grep -oE '\d+(\.\d+)*' | head -1)
+   OP_CV=$(apk list luci-app-openclash 2>/dev/null |grep 'installed' | grep -oE '\d+(\.\d+)*' | head -1 |awk -F '.' '{print $2$3}' 2>/dev/null)
 fi
 OP_LV=$(sed -n 1p "$LAST_OPVER" 2>/dev/null |awk -F 'v' '{print $2}' |awk -F '.' '{print $2$3}' 2>/dev/null)
 RELEASE_BRANCH=$(uci -q get openclash.config.release_branch || echo "master")
@@ -127,13 +127,11 @@ SLOG_CLEAN()
 	echo "" > $START_LOG
 }
 
-LOG_OUT "Uninstalling The Old Version, Please Do not Refresh The Page or Do Other Operations..."
 uci -q set openclash.config.enable=0
 uci -q commit openclash
 if [ -x "/bin/opkg" ]; then
+   LOG_OUT "Uninstalling The Old Version, Please Do not Refresh The Page or Do Other Operations..."
    opkg remove --force-depends --force-remove luci-app-openclash
-elif [ -x "/usr/bin/apk" ]; then
-   apk del luci-app-openclash
 fi
 LOG_OUT "Installing The New Version, Please Do Not Refresh The Page or Do Other Operations..."
 if [ -x "/bin/opkg" ]; then
@@ -156,10 +154,10 @@ if [ -x "/bin/opkg" ]; then
       SLOG_CLEAN
    fi
 elif [ -x "/usr/bin/apk" ]; then
-   if [ "$?" != "0" ] || [ -z "$(apk list luci-app-openclash |grep 'installed')" ]; then
+   if [ "$?" != "0" ] || [ -z "$(apk list luci-app-openclash 2>/dev/null |grep 'installed')" ]; then
       apk add --allow-untrusted /tmp/openclash.apk
    fi
-   if [ "$?" != "0" ] || [ -z "$(apk list luci-app-openclash |grep 'installed')" ]; then
+   if [ "$?" != "0" ] || [ -z "$(apk list luci-app-openclash 2>/dev/null |grep 'installed')" ]; then
       rm -rf /tmp/openclash.apk >/dev/null 2>&1
       LOG_OUT "OpenClash Update Successful, About To Restart!"
       uci -q set openclash.config.enable=1
