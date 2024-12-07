@@ -69,12 +69,6 @@ if [ -n "$OP_CV" ] && [ -n "$OP_LV" ] && [ "$(expr "$OP_LV" \> "$OP_CV")" -eq 1 
          elif [ -x "/usr/bin/apk" ]; then
             curl -SsL --connect-timeout 30 -m 60 --speed-time 30 --speed-limit 1 --retry 2 "$github_address_mod"gh/vernesong/OpenClash@package/"$RELEASE_BRANCH"/luci-app-openclash-"$LAST_VER".apk -o /tmp/openclash.apk 2>&1 |sed ':a;N;$!ba; s/\n/ /g' | awk -v time="$(date "+%Y-%m-%d %H:%M:%S")" -v file="/tmp/openclash.apk" '{print time "【" file "】Download Failed:【"$0"】"}' >> "$LOG_FILE"
          fi
-      elif [ "$github_address_mod" == "https://raw.fastgit.org/" ]; then
-         if [ -x "/bin/opkg" ]; then
-            curl -SsL --connect-timeout 30 -m 60 --speed-time 30 --speed-limit 1 --retry 2 https://raw.fastgit.org/vernesong/OpenClash/package/"$RELEASE_BRANCH"/luci-app-openclash_"$LAST_VER"_all.ipk -o /tmp/openclash.ipk 2>&1 |sed ':a;N;$!ba; s/\n/ /g' | awk -v time="$(date "+%Y-%m-%d %H:%M:%S")" -v file="/tmp/openclash.ipk" '{print time "【" file "】Download Failed:【"$0"】"}' >> "$LOG_FILE"
-         elif [ -x "/usr/bin/apk" ]; then
-            curl -SsL --connect-timeout 30 -m 60 --speed-time 30 --speed-limit 1 --retry 2 https://raw.fastgit.org/vernesong/OpenClash/package/"$RELEASE_BRANCH"/luci-app-openclash-"$LAST_VER".apk -o /tmp/openclash.apk 2>&1 |sed ':a;N;$!ba; s/\n/ /g' | awk -v time="$(date "+%Y-%m-%d %H:%M:%S")" -v file="/tmp/openclash.apk" '{print time "【" file "】Download Failed:【"$0"】"}' >> "$LOG_FILE"
-         fi
       else
          if [ -x "/bin/opkg" ]; then
             curl -SsL --connect-timeout 30 -m 60 --speed-time 30 --speed-limit 1 --retry 2 "$github_address_mod"https://raw.githubusercontent.com/vernesong/OpenClash/package/"$RELEASE_BRANCH"/luci-app-openclash_"$LAST_VER"_all.ipk -o /tmp/openclash.ipk 2>&1 |sed ':a;N;$!ba; s/\n/ /g' | awk -v time="$(date "+%Y-%m-%d %H:%M:%S")" -v file="/tmp/openclash.ipk" '{print time "【" file "】Download Failed:【"$0"】"}' >> "$LOG_FILE"
@@ -91,10 +85,9 @@ if [ -n "$OP_CV" ] && [ -n "$OP_LV" ] && [ "$(expr "$OP_LV" \> "$OP_CV")" -eq 1 
    fi
 
    if [ "${PIPESTATUS[0]}" -eq 0 ]; then
+      LOG_OUT "【OpenClash - v$LAST_VER】Download Successful, Start Pre Update Test..."
       if [ -x "/bin/opkg" ]; then
          if [ -s "/tmp/openclash.ipk" ]; then
-            LOG_OUT "【OpenClash - v$LAST_VER】Download Successful, Start Pre Update Test..."
-            
             if [ -z "$(opkg install /tmp/openclash.ipk --noaction 2>/dev/null |grep 'Upgrading luci-app-openclash on root' 2>/dev/null)" ]; then
                LOG_OUT "【OpenClash - v$LAST_VER】Pre Update Test Failed, The File is Saved in /tmp/openclash.ipk, Please Try to Update Manually!"
                if [ "$(uci -q get openclash.config.config_reload)" -eq 1 ]; then
@@ -108,8 +101,24 @@ if [ -n "$OP_CV" ] && [ -n "$OP_LV" ] && [ "$(expr "$OP_LV" \> "$OP_CV")" -eq 1 
                exit 0
             fi
          fi
-         LOG_OUT "【OpenClash - v$LAST_VER】Pre Update Test Passed, Ready to Update and Please Do not Refresh The Page and Other Operations..."
+      elif [ -x "/usr/bin/apk" ]; then
+         if [ -s "/tmp/openclash.apk" ]; then
+            apk add -s -q --clean-protected --allow-untrusted /tmp/openclash.apk >/dev/null 2>&1
+            if [ "$?" != "0" ]; then
+               LOG_OUT "【OpenClash - v$LAST_VER】Pre Update Test Failed, The File is Saved in /tmp/openclash.apk, Please Try to Update Manually!"
+               if [ "$(uci -q get openclash.config.config_reload)" -eq 1 ]; then
+                  uci -q set openclash.config.config_reload=0
+                  uci -q commit openclash
+                  /etc/init.d/openclash restart >/dev/null 2>&1 &
+               else
+                  SLOG_CLEAN
+               fi
+               del_lock
+               exit 0
+            fi
+         fi
       fi
+      LOG_OUT "【OpenClash - v$LAST_VER】Pre Update Test Passed, Ready to Update and Please Do not Refresh The Page and Other Operations..."
       cat > /tmp/openclash_update.sh <<"EOF"
 #!/bin/sh
 START_LOG="/tmp/openclash_start.log"
@@ -139,7 +148,7 @@ LOG_OUT "Installing The New Version, Please Do Not Refresh The Page or Do Other 
 if [ -x "/bin/opkg" ]; then
    opkg install /tmp/openclash.ipk
 elif [ -x "/usr/bin/apk" ]; then
-   apk add --allow-untrusted /tmp/openclash.apk
+   apk add -q --clean-protected --allow-untrusted /tmp/openclash.apk
 fi
 if [ -x "/bin/opkg" ]; then
    if [ "$?" != "0" ] || [ -z "$(opkg info *openclash |grep Installed-Time)" ]; then
@@ -157,7 +166,7 @@ if [ -x "/bin/opkg" ]; then
    fi
 elif [ -x "/usr/bin/apk" ]; then
    if [ "$?" != "0" ] || [ -z "$(apk list luci-app-openclash 2>/dev/null |grep 'installed')" ]; then
-      apk add --allow-untrusted /tmp/openclash.apk
+      apk add -q --clean-protected --allow-untrusted /tmp/openclash.apk
    fi
    if [ "$?" != "0" ] || [ -z "$(apk list luci-app-openclash 2>/dev/null |grep 'installed')" ]; then
       rm -rf /tmp/openclash.apk >/dev/null 2>&1
