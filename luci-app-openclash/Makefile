@@ -122,10 +122,13 @@ endef
 
 define Package/$(PKG_NAME)/postrm
 #!/bin/sh
-	DEFAULT_DNSMASQ_CFGID=$(uci show dhcp.@dnsmasq[0] | awk -F '.' '{print $2}' | awk -F '=' '{print $1}' | head -1)
-	DNSMASQ_CONF_PATH=$(grep -l "^conf-dir=" "/tmp/etc/dnsmasq.conf.${DEFAULT_DNSMASQ_CFGID}")
-	DNSMASQ_CONF_DIR=$(grep '^conf-dir=' "$DNSMASQ_CONF_PATH" | cut -d'=' -f2 | head -n 1)
-	DNSMASQ_CONF_DIR=${DNSMASQ_CONF_DIR%*/}
+	DEFAULT_DNSMASQ_CFGID="$$(uci -q show "dhcp.@dnsmasq[0]" | awk 'NR==1 {split($0, conf, /[.=]/); print conf[2]}')"
+	if [ -f "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID" ]; then
+	   DNSMASQ_CONF_DIR="$$(awk -F '=' '/^conf-dir=/ {print $2}' "/tmp/etc/dnsmasq.conf.$DEFAULT_DNSMASQ_CFGID")"
+	else
+	   DNSMASQ_CONF_DIR="/tmp/dnsmasq.d"
+	fi
+	DNSMASQ_CONF_DIR=$${DNSMASQ_CONF_DIR%*/}
 	rm -rf /etc/openclash >/dev/null 2>&1
 	rm -rf /etc/config/openclash >/dev/null 2>&1
 	rm -rf /tmp/openclash.log >/dev/null 2>&1
@@ -149,8 +152,10 @@ define Package/$(PKG_NAME)/postrm
 	sed -i '/.*kB maximum content size*/c\export let HTTP_MAX_CONTENT = 1024*100;		// 100 kB maximum content size' /usr/share/ucode/luci/http.uc >/dev/null 2>&1
 	uci -q delete firewall.openclash
 	uci -q commit firewall
+	[ -f "/etc/config/ucitrack" ] && {
 	uci -q delete ucitrack.@openclash[-1]
 	uci -q commit ucitrack
+	}
 	rm -rf /tmp/luci-*
 	exit 0
 endef
