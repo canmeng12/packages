@@ -1558,6 +1558,7 @@ start_dns() {
 		-USE_DIRECT_LIST "${USE_DIRECT_LIST}" -USE_PROXY_LIST "${USE_PROXY_LIST}" -USE_BLOCK_LIST "${USE_BLOCK_LIST}" -USE_GFW_LIST "${USE_GFW_LIST}" -CHN_LIST "${CHN_LIST}" \
 		-TCP_NODE ${TCP_NODE} -DEFAULT_PROXY_MODE ${TCP_PROXY_MODE} -NO_PROXY_IPV6 ${DNSMASQ_FILTER_PROXY_IPV6:-0} -NFTFLAG ${nftflag:-0} \
 		-NO_LOGIC_LOG ${NO_LOGIC_LOG:-0}
+	awk '!seen[$0]++' ${GLOBAL_DNSMASQ_CONF} > ${TMP_PATH}/dnsmasq_default.tmp && mv ${TMP_PATH}/dnsmasq_default.tmp ${GLOBAL_DNSMASQ_CONF}
 	ln_run "$(first_type dnsmasq)" "dnsmasq_default" "/dev/null" -C ${GLOBAL_DNSMASQ_CONF} -x ${GLOBAL_ACL_PATH}/dnsmasq.pid
 	echo "${GLOBAL_DNSMASQ_PORT}" > ${GLOBAL_ACL_PATH}/var_redirect_dns_port
 	DNS_REDIRECT_PORT=${GLOBAL_DNSMASQ_PORT}
@@ -1758,6 +1759,7 @@ acl_app() {
 								-TUN_DNS "127.0.0.1#${_dns_port}" -REMOTE_FAKEDNS 0 -USE_DEFAULT_DNS "${use_default_dns:-direct}" -CHINADNS_DNS ${_china_ng_listen:-0} \
 								-TCP_NODE $tcp_node -DEFAULT_PROXY_MODE ${tcp_proxy_mode} -NO_PROXY_IPV6 ${dnsmasq_filter_proxy_ipv6:-0} -NFTFLAG ${nftflag:-0} \
 								-NO_LOGIC_LOG 1
+							awk '!seen[$0]++' ${dnsmasq_conf} > ${TMP_PATH}/dnsmasq_${sid}.tmp && mv ${TMP_PATH}/dnsmasq_${sid}.tmp ${dnsmasq_conf}
 							ln_run "$(first_type dnsmasq)" "dnsmasq_${sid}" "/dev/null" -C ${dnsmasq_conf} -x ${acl_path}/dnsmasq.pid
 							echo "${dnsmasq_port}" > ${acl_path}/var_redirect_dns_port
 							eval node_${tcp_node}_$(echo -n "${tcp_proxy_mode}${remote_dns}" | md5sum | cut -d " " -f1)=${dnsmasq_port}
@@ -1912,6 +1914,14 @@ start() {
 		dnsmasq_version=$(dnsmasq -v | grep -i "Dnsmasq version " | awk '{print $3}')
 		[ "$(expr $dnsmasq_version \>= 2.90)" == 0 ] && echolog "Dnsmasq版本低于2.90，建议升级至2.90及以上版本以避免部分情况下Dnsmasq崩溃问题！"
 	}
+
+	if [ "$ENABLED_DEFAULT_ACL" == 1 ] || [ "$ENABLED_ACLS" == 1 ]; then
+		[ "$(uci -q get dhcp.@dnsmasq[0].dns_redirect)" == "1" ] && {
+			uci -q set dhcp.@dnsmasq[0].dns_redirect='0' 2>/dev/null
+			uci commit dhcp 2>/dev/null
+			/etc/init.d/dnsmasq restart >/dev/null 2>&1
+		}
+	fi
 
 	[ "$ENABLED_DEFAULT_ACL" == 1 ] && {
 		mkdir -p ${GLOBAL_ACL_PATH}
