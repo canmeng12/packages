@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-passwall2
-PKG_VERSION:=24.12.05
+PKG_VERSION:=24.12.21
 PKG_RELEASE:=1
 
 PKG_CONFIG_DEPENDS:= \
@@ -25,14 +25,13 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_SingBox \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Xray \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client \
-	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Geoview \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
 
 LUCI_TITLE:=LuCI support for PassWall 2
 LUCI_PKGARCH:=all
 LUCI_DEPENDS:=+coreutils +coreutils-base64 +coreutils-nohup +curl \
 	+ip-full +libuci-lua +lua +luci-compat +luci-lib-jsonc +resolveip +tcping \
-	+v2ray-geoip +v2ray-geosite \
+	+geoview +v2ray-geoip +v2ray-geosite \
 	+unzip \
 	+PACKAGE_$(PKG_NAME)_INCLUDE_IPv6_Nat:ip6tables-mod-nat
 
@@ -48,6 +47,7 @@ if PACKAGE_$(PKG_NAME)
 
 config PACKAGE_$(PKG_NAME)_Iptables_Transparent_Proxy
 	bool "Iptables Transparent Proxy"
+	select PACKAGE_chinadns-ng
 	select PACKAGE_dnsmasq-full
 	select PACKAGE_dnsmasq_full_ipset
 	select PACKAGE_ipset
@@ -63,6 +63,7 @@ config PACKAGE_$(PKG_NAME)_Iptables_Transparent_Proxy
 
 config PACKAGE_$(PKG_NAME)_Nftables_Transparent_Proxy
 	bool "Nftables Transparent Proxy"
+	select PACKAGE_chinadns-ng
 	select PACKAGE_dnsmasq-full
 	select PACKAGE_dnsmasq_full_nftset
 	select PACKAGE_nftables
@@ -101,7 +102,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Server
 config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
 	bool "Include Shadowsocks Rust Client"
 	select PACKAGE_shadowsocks-rust-sslocal
-	default y 
+	default n
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server
 	bool "Include Shadowsocks Rust Server"
@@ -140,11 +141,6 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client
 	depends on aarch64||arm||i386||x86_64
 	select PACKAGE_tuic-client
 	default n
-
-config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Geoview
-	bool "Include V2ray_Geoview"
-	select PACKAGE_geoview
-	default y if aarch64||arm||i386||x86_64
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
 	bool "Include V2ray-Plugin (Shadowsocks Plugin)"
