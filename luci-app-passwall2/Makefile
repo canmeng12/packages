@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-passwall2
-PKG_VERSION:=25.1.1
+PKG_VERSION:=25.1.8
 PKG_RELEASE:=1
 
 PKG_CONFIG_DEPENDS:= \
@@ -23,9 +23,9 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_ShadowsocksR_Libev_Server \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Simple_Obfs \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_SingBox \
-	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Xray \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client \
-	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
+	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin \
+	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Xray \
 
 LUCI_TITLE:=LuCI support for PassWall 2
 LUCI_PKGARCH:=all
@@ -101,6 +101,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Server
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
 	bool "Include Shadowsocks Rust Client"
+	depends on aarch64||arm||i386||mips||mipsel||x86_64
 	select PACKAGE_shadowsocks-rust-sslocal
 	default n
 
@@ -131,11 +132,6 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_SingBox
 	select PACKAGE_sing-box
 	default y
 
-config PACKAGE_$(PKG_NAME)_INCLUDE_Xray
-	bool "Include Xray"
-	select PACKAGE_Xray
-	default y
-
 config PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client
 	bool "Include tuic-client"
 	depends on aarch64||arm||i386||x86_64
@@ -146,6 +142,11 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
 	bool "Include V2ray-Plugin (Shadowsocks Plugin)"
 	select PACKAGE_v2ray-plugin
 	default n
+
+config PACKAGE_$(PKG_NAME)_INCLUDE_Xray
+	bool "Include Xray"
+	select PACKAGE_Xray
+	default y
 
 endif
 endmenu
