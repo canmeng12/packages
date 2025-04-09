@@ -1,6 +1,7 @@
 #!/bin/sh /etc/rc.common
 
 START=90
+CRON_FILE=/etc/crontabs/root
 
 interface() {
 	nic=$(ifconfig -a | grep -o '^[^ ]*')
@@ -88,6 +89,8 @@ start() {
 	nft add chain ip6 nat prerouting { type nat hook prerouting priority 0\; } 2>/dev/null
 	nft add chain ip6 nat postrouting { type nat hook postrouting priority 100\; } 2>/dev/null
 	nft add rule ip6 nat postrouting oif $device masquerade 2>/dev/null
+	grep -q "nft list table ip6 nat" $CRON_FILE || echo "* * * * * nft list table ip6 nat 2>&1 | grep -q 'iptables-nft' && ( /etc/init.d/nat6 stop ; /etc/init.d/nat6 start )" >> $CRON_FILE
+	crontab $CRON_FILE
 	logger -p notice -t network -s "nat6: IPv6 NAT is ready"
 }
 
@@ -107,5 +110,13 @@ EOF
 			commit dhcp
 EOF
 	fi
+	sed -i '/nft list table ip6 nat/d' $CRON_FILE 2> /dev/null
+	crontab $CRON_FILE
 	/etc/init.d/odhcpd reload
+}
+
+restart() {
+	stop
+	sleep 3
+	start
 }
