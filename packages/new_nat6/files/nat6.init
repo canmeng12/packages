@@ -5,7 +5,7 @@ CRON_FILE=/etc/crontabs/root
 
 interface() {
 	nic=$(ifconfig -a | grep -o '^[^ ]*')
-	dhcpv6_interface=$(uci -q show network | grep dhcpv6 | grep -o 'network\.\([^\.]*\)' | sed 's/network.//')
+	dhcpv6_interface=$(uci -q show network | grep -E "dhcpv6|ip6addr" | grep -o 'network\.\([^\.]*\)' | sed 's/network.//')
 	IFS=$'\n'
 	for interface_name in $dhcpv6_interface
 	do
@@ -19,7 +19,8 @@ interface() {
 			fi
 		fi
 		if [ $(ifconfig $device | grep -c "inet6 addr") -gt 0 ]; then
-			gateway=$(ip -6 route | grep "default from" | awk '{print $5}')
+			ip6gw=$(uci -q show network.$interface_name.ip6gw | grep -o "'.*'" | awk -F"'" '{print $2}')
+			[ -n "$ip6gw" ] && gateway="$ip6gw" || gateway=$(ip -6 route | grep "default from" | awk '{print $5}')
 			break
 		fi
 	done
