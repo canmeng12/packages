@@ -1,0 +1,19 @@
+#!/bin/sh
+
+[ "$(uci -q get firewall.@defaults[0].nat6)" != "1" ] && exit 0
+
+dhcpv6_interface=$(uci -q show network | grep dhcpv6 | grep -o 'network\.\([^\.]*\)' | sed 's/network.//')
+IFS=$'\n'
+for interface_name in $dhcpv6_interface
+do
+	device=$(uci -q show network.$interface_name.device | grep -o "'.*'" | awk -F"'" '{print $2}')
+	if [ $(ifconfig $device | grep -c "inet6 addr") -gt 0 ]; then
+		interface_name=$interface_name
+	fi
+done
+
+[ "$INTERFACE" = "$interface_name" ] || exit 0
+
+if [ "$ACTION" = ifup ] || [ "$ACTION" = iflink ] || [ "$ACTION" = ifupdate ] || [ "$ACTION" = reload ]; then
+	/etc/init.d/nat6 restart
+fi
