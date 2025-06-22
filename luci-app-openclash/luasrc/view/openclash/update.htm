@@ -7,7 +7,7 @@
 	  	</p>
 	  </td></tr>
 	  <tr><td width="16.6%" align="right"><%:Compiled Version%></td>
-	  	<td width="16.6%" align="left"><select id="CORE_VERSION">
+	  	<td width="16.6%" align="left"><select class="select-class" id="CORE_VERSION">
 	  		<option value="linux-386"><%:linux-386%></option>
 				<option value="linux-amd64"><%:linux-amd64(x86-64)%></option>
 				<option value="linux-amd64-v3"><%:linux-amd64-v3(x86-64)%></option>
@@ -28,12 +28,12 @@
 				<option value="0"><%:Not Set%></option>
 	  	</select></td>
 	  	<td width="16.6%" align="right"><%:Release Branch%></td>
-	  	<td width="16.6%" align="left"><select id="RELEASE_BRANCH">
+	  	<td width="16.6%" align="left"><select class="select-class" id="RELEASE_BRANCH">
 	  		<option value="master">Master</option>
 			<option value="dev">Developer</option>
 	  	</select></td>
 		<td width="16.6%" align="right"><%:Smart Core%> <a href="javascript:void(0);" onclick="window.open('https://github.com/vernesong/mihomo/releases', '_blank');" style="color: #0066cc; text-decoration: underline;" title="<%:View core infos that support smart group%>"> (?)</a></td>
-	  	<td width="16.6%" align="left"><select id="SMART_ENABLE">
+	  	<td width="16.6%" align="left"><select class="select-class" id="SMART_ENABLE">
 	  		<option value="0"><%:Disabled%></option>
 			<option value="1"><%:Enable%></option>
 	  	</select></td>
@@ -233,7 +233,7 @@
 			}
 			var coremetalvis = status.corelv;
 			if (coremetalvis != status.coremetacv && coremetalvis != "" && coremetalvis != "loading...") {
-			   core_meta_lv.innerHTML = "<b style=color:green>"+coremetalvis+"<%:<New>%></b>";
+			   core_meta_lv.innerHTML = "<b style=color:green>"+coremetalvis+" <%:<New>%></b>";
 			}
 			else if (coremetalvis != "" && coremetalvis == status.coremetacv && coremetalvis != "loading...") {
 			   core_meta_lv.innerHTML = "<b style=color:green>"+coremetalvis+"</b>";
@@ -247,15 +247,29 @@
 			var oplv = status.oplv;
 			op_cv.innerHTML = status.opcv ? "<b style=color:green>"+status.opcv+"</b>" : "<b style=color:red><%:Unknown%></b>";
 			if (oplv != "" && oplv != "loading..." && status.opcv) {
-				var oplvck = oplv.match(/\d+(\.\d+)+/)[0].replace(/\./g, "")
-				var opcvck = status.opcv.match(/\d+(\.\d+)+/)[0].replace(/\./g, "")
-				if (oplvck > opcvck) {
-					op_lv.innerHTML = "<b style=color:green>"+oplv+"<%:<New>%></b>";
-				}
-				else {
-					op_lv.innerHTML = "<b style=color:green>"+oplv+"</b>";
-				}
-			}
+                function compareVersions(v1, v2) {
+                    var ver1 = v1.replace(/^v/, '').split('.');
+                    var ver2 = v2.replace(/^v/, '').split('.');
+                    
+                    var maxLen = Math.max(ver1.length, ver2.length);
+                    while (ver1.length < maxLen) ver1.push('0');
+                    while (ver2.length < maxLen) ver2.push('0');
+                    
+                    for (var i = 0; i < maxLen; i++) {
+                        var num1 = parseInt(ver1[i], 10);
+                        var num2 = parseInt(ver2[i], 10);
+                        if (num1 > num2) return 1;
+                        if (num1 < num2) return -1;
+                    }
+                    return 0;
+                }
+                
+                if (compareVersions(oplv, status.opcv) > 0) {
+                    op_lv.innerHTML = "<b style=color:green>"+oplv+" <%:<New>%></b>";
+                } else {
+                    op_lv.innerHTML = "<b style=color:green>"+oplv+"</b>";
+                }
+            }
 			else if (oplv != "" && oplv != "loading...") {
 				op_lv.innerHTML = "<b style=color:green>"+oplv+"</b>";
 			}
