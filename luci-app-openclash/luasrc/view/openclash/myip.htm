@@ -26,7 +26,7 @@
 <style>
 
 .oc {
-    --card-item-padding: 16px 12px;
+    --card-item-padding: 12px 8px;
     --card-item-min-height: 100px;
     --card-item-border-radius: var(--radius-md);
 }
@@ -176,6 +176,7 @@
     min-height: var(--card-item-min-height);
     text-align: center;
     position: relative;
+    max-height: 104px;
 }
 
 .oc .myip-ip-item:hover,
@@ -218,14 +219,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 1px;
     flex: 1;
     justify-content: center;
     min-height: 50px;
 }
 
 .oc .ip-result {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-primary, #111827);
     white-space: nowrap;
     overflow: hidden;
@@ -254,7 +255,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 1px;
     flex: 1;
     justify-content: center;
     min-height: 50px;
@@ -262,7 +263,7 @@
 
 .oc .sk-text-success,
 .oc .sk-text-error {
-    font-size: 14px;
+    font-size: 13px;
     line-height: 18px;
     white-space: nowrap;
     overflow: hidden;
@@ -402,7 +403,7 @@
 
 @media screen and (max-width: 768px) {
     .oc {
-        --card-item-padding: 12px 8px;
+        --card-item-padding: 8px 6px;
         --card-item-min-height: 80px;
     }
     
@@ -439,11 +440,11 @@
     }
     
     .oc .ip-result {
-        font-size: 13px;
+        font-size: 12px;
     }
     
     .oc .ip-geo {
-        font-size: 11px;
+        font-size: 12px;
     }
     
     .oc .sk-text-success, 
@@ -452,7 +453,7 @@
     }
     
     .oc .sk-load-success {
-        font-size: 11px;
+        font-size: 12px;
     }
     
     .oc .myip-footer p {
@@ -463,7 +464,7 @@
 
 @media screen and (max-width: 575px) {
     .oc {
-        --card-item-padding: 10px;
+        --card-item-padding: 6px 4px;
         --card-item-min-height: 70px;
     }
     
@@ -496,11 +497,11 @@
     }
     
     .oc .ip-result {
-        font-size: 12px;
+        font-size: 11px;
     }
     
     .oc .ip-geo {
-        font-size: 10px;
+        font-size: 11px;
     }
     
     .oc .sk-text-success, 
@@ -509,7 +510,7 @@
     }
     
     .oc .sk-load-success {
-        font-size: 10px;
+        font-size: 11px;
     }
     
     .oc .myip-footer p {
@@ -547,7 +548,7 @@
                                 
                                 <div class="myip-ip-list">
                                     <div class="myip-ip-item">
-                                        <span class="ip-title">UpaiYun:</span>
+                                        <span class="ip-title">UpaiYun</span>
                                         <div class="myip-ip-result">
                                             <span class="ip-result" id="ip-upaiyun"></span>
                                             <span class="ip-geo" id="ip-upaiyun-geo"></span>
@@ -555,7 +556,7 @@
                                     </div>
                                     
                                     <div class="myip-ip-item">
-                                        <span class="ip-title">IPIP.NET:</span>
+                                        <span class="ip-title">IPIP.NET</span>
                                         <div class="myip-ip-result">
                                             <span class="ip-result" id="ip-ipip"></span>
                                             <span class="ip-geo" id="ip-ipip-geo"></span>
@@ -563,7 +564,7 @@
                                     </div>
                                     
                                     <div class="myip-ip-item">
-                                        <span class="ip-title">IP.SB:</span>
+                                        <span class="ip-title">IP.SB</span>
                                         <div class="myip-ip-result">
                                             <span class="ip-result" id="ip-ipsb"></span>
                                             <span class="ip-geo" id="ip-ipsb-geo"></span>
@@ -571,7 +572,7 @@
                                     </div>
                                     
                                     <div class="myip-ip-item">
-                                        <span class="ip-title">IPIFY:</span>
+                                        <span class="ip-title">IPIFY</span>
                                         <div class="myip-ip-result">
                                             <span class="ip-result" id="ip-ipify"></span>
                                             <span class="ip-geo" id="ip-ipify-geo"></span>
@@ -600,7 +601,7 @@
                                 
                                 <div class="myip-check-list">
                                     <div class="myip-check-item">
-                                        <span class="ip-state_title"><%:Baidu Search%>:</span>
+                                        <span class="ip-state_title"><%:Baidu Search%></span>
                                         <div class="myip-status-result">
                                             <span id="http-baidu"></span>
                                             <span id="ldtime-baidu"></span>
@@ -608,7 +609,7 @@
                                     </div>
                                     
                                     <div class="myip-check-item">
-                                        <span class="ip-state_title"><%:NetEase Music%>:</span>
+                                        <span class="ip-state_title"><%:NetEase Music%></span>
                                         <div class="myip-status-result">
                                             <span id="http-163"></span>
                                             <span id="ldtime-163"></span>
@@ -616,7 +617,7 @@
                                     </div>
                                     
                                     <div class="myip-check-item">
-                                        <span class="ip-state_title">GitHub:</span>
+                                        <span class="ip-state_title">GitHub</span>
                                         <div class="myip-status-result">
                                             <span id="http-github"></span>
                                             <span id="ldtime-github"></span>
@@ -624,7 +625,7 @@
                                     </div>
                                     
                                     <div class="myip-check-item">
-                                        <span class="ip-state_title">YouTube:</span>
+                                        <span class="ip-state_title">YouTube</span>
                                         <div class="myip-status-result">
                                             <span id="http-youtube"></span>
                                             <span id="ldtime-youtube"></span>
