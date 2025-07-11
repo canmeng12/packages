@@ -203,12 +203,12 @@
     background: var(--bg-white);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-lg);
-    padding: 16px;
+    padding: 12px;
     box-shadow: var(--shadow-sm);
     transition: all var(--transition-fast);
     display: grid;
     grid-template-rows: var(--row-1-height) var(--row-2-height) var(--row-3-height) var(--row-4-height);
-    gap: 12px;
+    gap: 8px;
     overflow: visible;
     grid-row: 2;
     max-width: 100%;
@@ -257,14 +257,14 @@
 .oc .card-row.dual-cards {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 8px;
     max-width: 100%;
 }
 
 .oc .card-row.stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 2fr);
-    gap: 6px;
+    gap: 8px;
     max-width: 100%;
 }
 
@@ -341,7 +341,6 @@
     flex-direction: column;
     gap: 10px;
     flex: 1;
-    justify-content: space-between;
     min-height: 0;
 }
 
@@ -369,6 +368,7 @@
     flex-direction: column;
     gap: 10px;
     justify-content: center;
+    width: 100%;
 }
 
 .oc .card-actions {
@@ -536,6 +536,7 @@
     transition: all var(--transition-fast);
     box-sizing: border-box;
     min-width: 0;
+    margin: 0 auto;
 }
 
 .oc .config-select:hover {
@@ -586,7 +587,7 @@
 }
 
 .oc .cbi-button-group {
-    display: inline-flex;
+    display: flex;
     background: var(--bg-white);
     border-radius: var(--radius-sm);
     padding: 2px;
@@ -597,7 +598,7 @@
     height: var(--control-height);
     align-items: center;
     white-space: nowrap;
-    width: fit-content;
+    width: 100%;
 }
 
 .oc .cbi-button-group input[type="radio"] {
@@ -608,6 +609,7 @@
 }
 
 .oc .cbi-button-option {
+    flex: 1 1 0;
     padding: 5px 5px;
     font-size: 12px;
     font-weight: 500;
@@ -617,7 +619,7 @@
     transition: all var(--transition-fast);
     user-select: none;
     text-align: center;
-    min-width: 35px;
+    min-width: 0;
     height: calc(var(--control-height) - 6px);
     display: flex;
     align-items: center;
@@ -1182,7 +1184,6 @@
         margin-bottom: 14px;
         max-width: 100%;
         width: 100%;
-        padding: 16px;
     }
 
     .oc .main-card:first-of-type {
@@ -1197,12 +1198,10 @@
 
     .oc .card-row.dual-cards {
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
     }
 
     .oc .card-row.stats-grid {
         grid-template-columns: repeat(4, 2fr);
-        gap: 8px;
     }
 
     .oc .config-selector {
@@ -1236,7 +1235,6 @@
     }
 
     .oc .main-card {
-        padding: 12px;
         grid-template-rows: auto auto auto auto;
     }
 
@@ -1249,13 +1247,8 @@
         gap: 12px;
     }
 
-    .oc .card-row.dual-cards {
-        gap: 8px;
-    }
-
     .oc .card-row.stats-grid {
         grid-template-columns: repeat(2, 2fr);
-        gap: 6px;
     }
 
     .oc .announcement-banner {
@@ -1386,12 +1379,10 @@
 
     .oc .card-row.dual-cards {
         grid-template-columns: 1fr;
-        gap: 6px;
     }
 
     .oc .card-row.stats-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 5px;
     }
 
     .oc .announcement-banner {
@@ -1652,7 +1643,7 @@
                                 <div class="card-title"><%:Running Mode%></div>
                                 <div class="card-content">
                                     <div class="card-value"><span id="_mode" class="value-indicator"><%:Collecting data...%></span></div>
-                                    <div class="running-mode-controls">
+                                    <div class="card-controls">
                                         <div id="radio-ru-mode" class="cbi-button-group" style="display: inline-flex;">
                                             <input type="radio" id="normal" name="radios-ru" value="" checked onclick="return switch_run_mode(this.value)"/><label for="normal" id="run_normal" class="cbi-button-option"><%:Compat%></label>
                                             <input type="radio" id="tun" name="radios-ru" value="-tun" onclick="return switch_run_mode(this.value)"/><label for="tun" class="cbi-button-option"><%:TUN%></label>
@@ -2109,15 +2100,28 @@
         reconnectDelay: 2000,
         heartbeatInterval: 30000,
         heartbeatTimers: {},
-        
+        _ws_connect: false,
+        _ws_error: false,
+        _ws_retry: 0,
+        _allowedCloseCodes: [1000, 1001, 1005, 1006],
+
+        isSupported: function() {
+            return typeof window.WebSocket !== "undefined";
+        },
+
         createConnection: function(type, url, messageHandler, options) {
             options = options || {};
-            
+
             this.closeConnection(type);
-            
+
+            if (!this.isSupported()) {
+                this.enableFallbackMode();
+                return null;
+            }
+
             try {
-                var ws = new WebSocket(url);
-                
+                var ws = new window.WebSocket(url);
+
                 this.connections[type] = {
                     socket: ws,
                     url: url,
@@ -2126,195 +2130,188 @@
                     lastActivity: Date.now(),
                     options: options
                 };
-                
+
                 this.retryAttempts[type] = 0;
-                
-                this.bindEventHandlers(type, ws);
-                
+
+                if (ws.addEventListener) {
+                    ws.addEventListener('open', this.handleOpen.bind(this, type));
+                    ws.addEventListener('message', this.handleMessage.bind(this, type));
+                    ws.addEventListener('error', this.handleError.bind(this, type));
+                    ws.addEventListener('close', this.handleClose.bind(this, type));
+                } else {
+                    ws.onopen = this.handleOpen.bind(this, type);
+                    ws.onmessage = this.handleMessage.bind(this, type);
+                    ws.onerror = this.handleError.bind(this, type);
+                    ws.onclose = this.handleClose.bind(this, type);
+                }
+
                 return ws;
             } catch (error) {
                 this.handleConnectionError(type, error);
                 return null;
             }
         },
-        
-        bindEventHandlers: function(type, ws) {
-            var self = this;
-            var connection = this.connections[type];
-            
-            ws.onopen = function(event) {
-                self.handleOpen(type, event);
-            };
-            
-            ws.onmessage = function(event) {
-                self.handleMessage(type, event);
-            };
-            
-            ws.onerror = function(error) {
-                self.handleError(type, error);
-            };
-            
-            ws.onclose = function(event) {
-                self.handleClose(type, event);
-            };
-        },
-        
-        handleOpen: function(type, event) {            
-            var connection = this.connections[type];
-            if (connection) {
-                connection.state = this.connectionStates.CONNECTED;
-                connection.lastActivity = Date.now();
-            }
-            
-            this.retryAttempts[type] = 0;
-            
-            this.startHeartbeat(type);
-            
-            if (type === 'traffic' || Object.keys(this.connections).length === 3) {
-                ws_connect = true;
-                ws_error = false;
-                ws_retry = 0;
-            }
-        },
-        
-        handleMessage: function(type, event) {
-            var connection = this.connections[type];
-            if (connection && connection.messageHandler) {
-                connection.lastActivity = Date.now();
-                try {
-                    connection.messageHandler(event);
-                } catch (error) {
-                }
-            }
-        },
-        
-        handleError: function(type, error) {            
-            var connection = this.connections[type];
-            if (connection) {
-                connection.state = this.connectionStates.ERROR;
-            }
-            
-            ws_error = true;
-            this.stopHeartbeat(type);
-            
-            if (type === 'traffic') {
-                this.enableFallbackMode();
-            }
-        },
-        
-        handleClose: function(type, event) {            
-            var connection = this.connections[type];
-            if (connection) {
-                connection.state = this.connectionStates.DISCONNECTED;
-            }
-            
-            this.stopHeartbeat(type);
-            
-            if (event.code !== 1000 && event.code !== 1001) {
-                this.scheduleReconnect(type);
-            }
-        },
-        
-        handleConnectionError: function(type, error) {
-            var connection = this.connections[type];
-            if (connection) {
-                connection.state = this.connectionStates.ERROR;
-            }
-            
-            ws_error = true;
-            this.enableFallbackMode();
-        },
-        
-        scheduleReconnect: function(type) {
-            var self = this;
-            var connection = this.connections[type];
-            
-            if (!connection || this.retryAttempts[type] >= this.maxRetries) {
-                this.enableFallbackMode();
-                return;
-            }
-            
-            this.retryAttempts[type] = (this.retryAttempts[type] || 0) + 1;
-            var delay = this.reconnectDelay * Math.pow(1.5, this.retryAttempts[type] - 1);
-                        
-            setTimeout(function() {
-                if (self.connections[type] && self.connections[type].state !== self.connectionStates.CONNECTED) {
-                    self.createConnection(type, connection.url, connection.messageHandler, connection.options);
-                }
-            }, delay);
-        },
-        
+
         startHeartbeat: function(type) {
             var self = this;
-            
             this.stopHeartbeat(type);
-            
+
             this.heartbeatTimers[type] = setInterval(function() {
                 var connection = self.connections[type];
                 if (connection && connection.socket && connection.state === self.connectionStates.CONNECTED) {
                     var timeSinceLastActivity = Date.now() - connection.lastActivity;
-                    
-                    if (timeSinceLastActivity > self.heartbeatInterval * 2) {
+                    if (timeSinceLastActivity > self.heartbeatInterval * 3) {
                         self.reconnectConnection(type);
                     }
                 }
             }, this.heartbeatInterval);
+
+            if (!this._visibilityHandlerAdded) {
+                document.addEventListener('visibilitychange', function() {
+                    if (document.hidden) {
+                        self.stopHeartbeat(type);
+                    } else {
+                        self.startHeartbeat(type);
+                    }
+                });
+                this._visibilityHandlerAdded = true;
+            }
         },
-        
+
         stopHeartbeat: function(type) {
             if (this.heartbeatTimers[type]) {
                 clearInterval(this.heartbeatTimers[type]);
                 delete this.heartbeatTimers[type];
             }
         },
-        
+
         reconnectConnection: function(type) {
             var connection = this.connections[type];
             if (connection) {
                 this.createConnection(type, connection.url, connection.messageHandler, connection.options);
             }
         },
-        
+
         closeConnection: function(type) {
             var connection = this.connections[type];
             if (connection && connection.socket) {
                 this.stopHeartbeat(type);
-                
                 try {
                     connection.socket.close(1000, 'Normal closure');
-                } catch (error) {
-                }
-                
+                } catch (error) {}
                 delete this.connections[type];
             }
         },
-        
+
         closeAll: function() {
             var types = Object.keys(this.connections);
             for (var i = 0; i < types.length; i++) {
                 this.closeConnection(types[i]);
             }
-            
-            ws_connect = false;
-            ws_error = false;
-            ws_retry = 0;
+            this._ws_connect = false;
+            this._ws_error = false;
+            this._ws_retry = 0;
         },
-        
-        enableFallbackMode: function() {            
-            ws_connect = false;
-            
+
+        handleMessage: function(type, event) {
+            var connection = this.connections[type];
+            if (connection && connection.messageHandler) {
+                connection.lastActivity = Date.now();
+                try {
+                    var data;
+                    try {
+                        data = JSON.parse(event.data);
+                    } catch (e) {
+                        data = event.data;
+                    }
+                    connection.messageHandler({ data: data, raw: event.data, event: event });
+                } catch (error) {
+                }
+            }
+        },
+
+        handleOpen: function(type, event) {
+            var connection = this.connections[type];
+            if (connection) {
+                connection.state = this.connectionStates.CONNECTED;
+                connection.lastActivity = Date.now();
+            }
+            this.retryAttempts[type] = 0;
+            this.startHeartbeat(type);
+
+            if (type === 'traffic' || Object.keys(this.connections).length === 3) {
+                this._ws_connect = true;
+                this._ws_error = false;
+                this._ws_retry = 0;
+            }
+        },
+
+        handleError: function(type, error) {
+            var connection = this.connections[type];
+            if (connection) {
+                connection.state = this.connectionStates.ERROR;
+            }
+            this._ws_error = true;
+            this.stopHeartbeat(type);
+
+            if (type === 'traffic') {
+                this.enableFallbackMode();
+            }
+        },
+
+        handleClose: function(type, event) {
+            var connection = this.connections[type];
+            if (connection) {
+                connection.state = this.connectionStates.DISCONNECTED;
+            }
+            this.stopHeartbeat(type);
+
+            if (this._allowedCloseCodes.indexOf(event.code) === -1) {
+                this.scheduleReconnect(type);
+            }
+        },
+
+        handleConnectionError: function(type, error) {
+            var connection = this.connections[type];
+            if (connection) {
+                connection.state = this.connectionStates.ERROR;
+            }
+            this._ws_error = true;
+            this.enableFallbackMode();
+        },
+
+        scheduleReconnect: function(type) {
+            var self = this;
+            var connection = this.connections[type];
+
+            if (!connection || this.retryAttempts[type] >= this.maxRetries) {
+                this.enableFallbackMode();
+                return;
+            }
+
+            this.retryAttempts[type] = (this.retryAttempts[type] || 0) + 1;
+            var delay = this.reconnectDelay * Math.pow(1.5, this.retryAttempts[type] - 1);
+
+            setTimeout(function() {
+                if (self.connections[type] && self.connections[type].state !== self.connectionStates.CONNECTED) {
+                    self.createConnection(type, connection.url, connection.messageHandler, connection.options);
+                }
+            }, delay);
+        },
+
+        enableFallbackMode: function() {
+            this._ws_connect = false;
             this.closeAll();
-            
-            if (NetworkStatsManager && !NetworkStatsManager.isEnabled) {
+            if (typeof NetworkStatsManager !== "undefined" && !NetworkStatsManager.isEnabled) {
                 NetworkStatsManager.start();
             }
         },
-        
+
         getConnectionState: function(type) {
             var connection = this.connections[type];
             return connection ? connection.state : this.connectionStates.DISCONNECTED;
         },
-        
+
         getAllConnectionStates: function() {
             var states = {};
             for (var type in this.connections) {
@@ -2322,7 +2319,7 @@
             }
             return states;
         },
-        
+
         hasActiveConnections: function() {
             for (var type in this.connections) {
                 if (this.getConnectionState(type) === this.connectionStates.CONNECTED) {
@@ -2331,7 +2328,7 @@
             }
             return false;
         },
-        
+
         resetRetryCount: function(type) {
             if (type) {
                 this.retryAttempts[type] = 0;
@@ -2580,6 +2577,11 @@
                 if (fileModifyTimeElement) {
                     var modifyTime = this.formatUnixTime(fileInfo.mtime);
                     fileModifyTimeElement.textContent = '<%:Update Time%>: ' + modifyTime;
+                    if (fileModifyTimeElement.scrollWidth > fileModifyTimeElement.clientWidth) {
+                        fileModifyTimeElement.title = fileModifyTimeElement.textContent;
+                    } else {
+                        fileModifyTimeElement.title = '';
+                    }
                 }
                 
                 if (detailsSection) {
@@ -3580,9 +3582,6 @@
     };
 
     var script_radio, script_radio_label;
-    var ws_connect = false;
-    var ws_error = false;
-    var ws_retry = 0;
     var s, gr;
     var pluginToggleUserAction = false;
 
@@ -3678,9 +3677,9 @@
             
             if (status.clash && status.daip) {
                 if (!WSManager.hasActiveConnections()) {
-                    if (!ws_error || ws_retry < 3) {
+                    if (!WSManager._ws_error || WSManager._ws_retry < 3) {
                         if (initializeWebSocketConnections(status)) {
-                            ws_retry++;
+                            WSManager._ws_retry++;
                         }
                     } else {
                         WSManager.enableFallbackMode();
@@ -3732,7 +3731,7 @@
     });
 
     function initializeWebSocketConnections(status) {
-        if (!status || !status.clash || !status.daip || !status.dase) {
+        if (!status || !status.clash || !status.daip) {
             return false;
         }
         
@@ -3758,7 +3757,7 @@
         ];
         
         connections.forEach(function(conn) {
-            var url = protocol + conn.endpoint + '?token=' + token;
+            var url = protocol + conn.endpoint + (token ? '?token=' + token : '');
             WSManager.createConnection(conn.type, url, conn.handler);
         });
         
@@ -4086,22 +4085,41 @@
     }
      
     function ws_terror() {
-        ws_error = true;
+        WSManager._ws_error = true;
         
         NetworkStatsManager.start();
     }
 
     function ws_tmessage(event) {
-        var data = JSON.parse(event.data);
+        var dataObj = event && event.data !== undefined ? event.data : event;
+        var data;
+        if (typeof dataObj === 'string') {
+            try {
+                data = JSON.parse(dataObj);
+            } catch (e) {
+                data = {};
+            }
+        } else {
+            data = dataObj;
+        }
         var uploadElement = document.getElementById("upload_");
         var downloadElement = document.getElementById("download_");
-        
         uploadElement.innerHTML = data.up ? "<font style=\"color:var(--success-color)\">"+bytesToSize(data.up)+"/S</font>" : "<font style=\"color:var(--success-color)\">0 B/S</font>";
         downloadElement.innerHTML = data.down ? "<font style=\"color:var(--success-color)\">"+bytesToSize(data.down)+"/S</font>" : "<font style=\"color:var(--success-color)\">0 B/S</font>";
     }
     
     function ws_cmessage(event) {
-        var data = JSON.parse(event.data);
+        var dataObj = event && event.data !== undefined ? event.data : event;
+        var data;
+        if (typeof dataObj === 'string') {
+            try {
+                data = JSON.parse(dataObj);
+            } catch (e) {
+                data = {};
+            }
+        } else {
+            data = dataObj;
+        }
         var updates = [
             {
                 element: document.getElementById("uploadtotal_"),
@@ -4120,10 +4138,19 @@
     }
 
     function ws_mmessage(event) {
-        var data = JSON.parse(event.data);
+        var dataObj = event && event.data !== undefined ? event.data : event;
+        var data;
+        if (typeof dataObj === 'string') {
+            try {
+                data = JSON.parse(dataObj);
+            } catch (e) {
+                data = {};
+            }
+        } else {
+            data = dataObj;
+        }
         var memElement = document.getElementById("mem_t");
         memElement.innerHTML = data.inuse ? "<font style=\"color:var(--success-color)\">"+bytesToSize(data.inuse)+"</font>" : "<font style=\"color:var(--success-color)\">0 KB</font>";
-        
         if (!SystemStatusManager.isEnabled) {
             SystemStatusManager.start();
         }
