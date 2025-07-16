@@ -1644,9 +1644,6 @@ msgstr "更新前测试失败，文件保存在 /tmp/openclash.apk，请尝试�
 msgid "Pre update test passed, ready to update and please do not refresh the page and other operations..."
 msgstr "更新前测试通过，准备开始更新，更新过程请不要刷新页面和进行其他操作..."
 
-msgid "Tip: Uninstalling the old version, please do not refresh the page or do other operations..."
-msgstr "提示：正在卸载旧版本，更新过程请不要刷新页面和进行其他操作..."
-
 msgid "Installing the new version, please do not refresh the page or do other operations..."
 msgstr "正在安装新版本，更新过程请不要刷新页面和进行其他操作..."
 
@@ -3831,6 +3828,9 @@ msgstr "下载"
 msgid "Save"
 msgstr "保存"
 
+msgid "Compare"
+msgstr "对比"
+
 msgid "Loading config file..."
 msgstr "正在加载配置文件..."
 
@@ -3838,7 +3838,13 @@ msgid "Ready"
 msgstr "就绪"
 
 msgid "Press F11 for fullscreen, Esc to exit fullscreen, Ctrl+Mouse Wheel to zoom"
-msgstr "按 F11 全屏，Esc 退出全屏，Ctrl+鼠标滚轮缩放"
+msgstr "按 F11 全屏，Esc 退出全屏，Ctrl+ 鼠标滚轮缩放"
+
+msgid "Press F10 to toggle differences, F11 for fullscreen, Esc to exit fullscreen, Ctrl+Mouse Wheel to zoom"
+msgstr "按 F10 显示 Diff，F11 全屏，Esc 退出全屏，Ctrl+ 鼠标滚轮缩放"
+
+msgid "Compare mode: left(Original Config), right(Runtime Config)"
+msgstr "对比模式：左侧（原始配置），右侧（运行配置）"
 
 msgid "Please select a config file first"
 msgstr "请先选择一个配置文件"
@@ -4031,3 +4037,12 @@ msgstr "显示更多订阅设置"
 
 msgid "Overwrite"
 msgstr "覆写"
+
+msgid "Original Config"
+msgstr "原始配置"
+
+msgid "Runtime Config"
+msgstr "运行配置"
+
+msgid "Runtime config (read only)"
+msgstr "运行配置（只读）"
