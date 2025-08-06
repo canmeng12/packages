@@ -29,6 +29,7 @@ s.anonymous = true
 s:tab("settings", translate("General Settings"))
 s:tab("dns", "DNS "..translate("Settings"))
 s:tab("meta", translate("Meta Settings"))
+s:tab("smart", translate("Smart Settings"))
 s:tab("rules", translate("Rules Setting"))
 s:tab("developer", translate("Developer Settings"))
 
@@ -344,6 +345,64 @@ function sniffer_custom.write(self, section, value)
 		end
 	end
 end
+
+-- Smart Settings
+o = s:taboption("smart", Flag, "auto_smart_switch", font_red..bold_on..translate("Smart Auto Switch")..bold_off..font_off)
+o.description = font_red..bold_on..translate("Auto Switch Url-test and Load-balance Group to Smart Group")..bold_off..font_off
+o.default = 0
+
+o = s:taboption("smart", ListValue, "smart_strategy", translate("Node Select Strategy"))
+o:value("sticky-sessions", translate("Sticky-sessions"))
+o:value("round-robin", translate("Round-robin"))
+o.default = "sticky-sessions"
+o:depends("auto_smart_switch", "1")
+o.description = translate("Before Node Data Collect Completely, The Default is Sticky-sessions")
+
+o = s:taboption("smart", Flag, "smart_collect", translate("Colletct Training Data"))
+o.default = 0
+o:depends("auto_smart_switch", "1")
+
+o = s:taboption("smart", Value, "smart_collect_size", translate("Data Colletct File Size (MB)"))
+o.default = 100
+o:depends("smart_collect", "1")
+o.description = translate("Limit The File Size of Collected Data, The Default is 100MB")
+
+o = s:taboption("smart", Value, "smart_collect_rate", translate("Data Colletct Rate"))
+o.default = 1
+o:depends("smart_collect", "1")
+o.description = translate("Data Acquisition Rate, Desirable Values are 0-1, The Default is 1")
+
+o = s:taboption("smart", Flag, "lgbm_auto_update", translate("Auto Update LightGBM Model"))
+o.default = 0
+
+o = s:taboption("smart", Value, "lgbm_update_interval", translate("Update Interval(hour)"))
+o.default = "72"
+o:depends("lgbm_auto_update", "1")
+
+o = s:taboption("smart", Value, "lgbm_custom_url")
+o.title = translate("Custom Model URL")
+o.rmempty = true
+o.description = translate("Custom LightGBM Model URL, Click Button Below To Refresh After Edit")
+o:value("https://github.com/vernesong/mihomo/releases/download/LightGBM-Model/Model.bin", translate("Light Version").." "..translate("(Default)"))
+o:value("https://github.com/vernesong/mihomo/releases/download/LightGBM-Model/model-middle.bin", translate("Middle Version"))
+o:value("https://github.com/vernesong/mihomo/releases/download/LightGBM-Model/model-large.bin", translate("Large Version"))
+o.default = "https://github.com/vernesong/mihomo/releases/download/LightGBM-Model/Model.bin"
+o:depends("lgbm_auto_update", "1")
+
+o = s:taboption("smart", Button, translate("Model Update"))
+o.description = translate("Current Version:").." "..font_green..bold_on..fs.get_resourse_mtime("/etc/openclash/model.bin")..bold_off..font_off
+o.title = translate("Update Model")
+o.inputtitle = translate("Check And Update")
+o.inputstyle = "reload"
+o.write = function()
+  m.uci:set("openclash", "config", "enable", 1)
+  m.uci:commit("openclash")
+  SYS.call("/usr/share/openclash/openclash_lgbm.sh >/dev/null 2>&1 &")
+  HTTP.redirect(DISP.build_url("admin", "services", "openclash"))
+end
+
+o = s:taboption("smart", DummyValue, "flush_smart_cache", translate("Flush Smart Cache"))
+o.template = "openclash/flush_smart_cache"
 
 ---- Rules Settings
 o = s:taboption("rules", Flag, "rule_source", translate("Enable Other Rules"))
