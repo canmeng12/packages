@@ -376,7 +376,7 @@
     border-radius: 4px;
 }
 .oc .sub-card.overwrite-item {
-    min-width: 180px;
+    width: 190px;
     max-width: 220px;
     flex: 0 0 auto;
     box-sizing: border-box;
@@ -494,8 +494,8 @@
         gap: 6px;
     }
     .oc .sub-card.overwrite-item {
-        min-width: 160px;
-        max-width: 180px;
+        width: 185px;
+        max-width: 200px;
         gap: 10px;
     }
     .oc .overwrite-drag-line {
@@ -769,7 +769,27 @@ var ConfigEditor = {
     
     show: function(configFile) {
         this.isOverwrite = false;
-        
+        this.currentViewMode = 'original';
+        this.currentConfigFile = '';
+        this.originalContent = '';
+        this.runtimeContent = '';
+        this.isModified = false;
+        this.mergeViewActive = false;
+
+        if (this.editorInstance) {
+            if (this.editorInstance.toTextArea) this.editorInstance.toTextArea();
+            this.editorInstance = null;
+        }
+        var textarea = document.getElementById('config-editor-textarea');
+        if (textarea) {
+            textarea.value = '';
+            textarea.style.display = 'none';
+        }
+        var loadingDiv = document.getElementById('config-editor-loading');
+        if (loadingDiv) loadingDiv.style.display = 'flex';
+        var mergeview = document.getElementById('config-mergeview-container');
+        if (mergeview) mergeview.style.display = 'none';
+
         var banner = document.getElementById('overwrite-banner');
         if (banner) banner.style.display = 'none';
 
@@ -784,8 +804,6 @@ var ConfigEditor = {
             return;
         }
 
-        this.currentViewMode = 'original';
-        this.runtimeContent = '';
         this.currentConfigFile = configFile;
         this.overlay.classList.add('show');
 
@@ -801,17 +819,33 @@ var ConfigEditor = {
         if (configNameElement) {
             configNameElement.textContent = this.formatDisplayName(configFile);
         }
-        
-        this.isModified = false;
-        this.originalContent = '';
 
-        this.mergeViewActive = false;
         this.hideMergeView();
         this.updateModeTabs();
+        this.loadConfigContent();
     },
 
     showOverwrite: function() {
         this.isOverwrite = true;
+        this.currentViewMode = 'original';
+        this.originalContent = '';
+        this.runtimeContent = '';
+        this.isModified = false;
+        this.mergeViewActive = false;
+
+        if (this.editorInstance) {
+            if (this.editorInstance.toTextArea) this.editorInstance.toTextArea();
+            this.editorInstance = null;
+        }
+        var textarea = document.getElementById('config-editor-textarea');
+        if (textarea) {
+            textarea.value = '';
+            textarea.style.display = 'none';
+        }
+        var loadingDiv = document.getElementById('config-editor-loading');
+        if (loadingDiv) loadingDiv.style.display = 'flex';
+        var mergeview = document.getElementById('config-mergeview-container');
+        if (mergeview) mergeview.style.display = 'none';
 
         var banner = document.getElementById('overwrite-banner');
         if (banner) banner.style.display = 'flex';
@@ -822,7 +856,9 @@ var ConfigEditor = {
         var layoutBtn = document.getElementById('config-editor-layout');
         if (layoutBtn) layoutBtn.style.display = 'none';
 
-        this.currentConfigFile = '/etc/openclash/custom/openclash_custom_overwrite.sh';
+        if (!this.currentConfigFile) {
+            this.currentConfigFile = '/etc/openclash/custom/openclash_custom_overwrite.sh';
+        }
         this.overlay.classList.add('show');
 
         this.model.classList.remove('maximized');
@@ -840,12 +876,8 @@ var ConfigEditor = {
         if (configNameElement) {
             configNameElement.textContent = this.formatDisplayName(this.currentConfigFile);
         }
-        this.isModified = false;
-        this.originalContent = '';
 
-        this.mergeViewActive = false;
         this.hideMergeView();
-
         this.loadConfigContent();
     },
     
@@ -859,7 +891,10 @@ var ConfigEditor = {
         
         this.isModified = false;
         this.originalContent = '';
-        this.currentConfigFile = '';
+        this.overwriteCardBar.style.display = 'none';
+        if (!this.isOverwrite) {
+            this.currentConfigFile = '';
+        }
         
         var loadingDiv = document.getElementById('config-editor-loading');
         var textarea = document.getElementById('config-editor-textarea');
@@ -1407,59 +1442,16 @@ var ConfigEditor = {
             title.textContent = name;
             title.className = 'overwrite-title';
             title.title = name;
-            card.appendChild(title);
-
-            var sub = self.overwriteSubInfo[name] || {};
-            var enable = typeof sub.enable !== 'undefined' ? sub.enable : 1;
-            var switchLabel = document.createElement('label');
-            switchLabel.className = 'oc-switch';
-
-            var switchInput = document.createElement('input');
-            switchInput.type = 'checkbox';
-            switchInput.checked = enable == 1 ? true : false;
-            switchInput.onchange = function(e) {
-                e.stopPropagation();
-                var newEnable = switchInput.checked ? 1 : 0;
-                var formData = new FormData();
-                formData.append('filename', name);
-                formData.append('type', sub.type || 'file');
-                formData.append('url', sub.url || '');
-                formData.append('update_days', sub.update_days || '');
-                formData.append('update_hour', sub.update_hour || '');
-                formData.append('order', sub.order || '');
-                formData.append('param', sub.param || '');
-                formData.append('enable', newEnable);
-                fetch('/cgi-bin/luci/admin/services/openclash/overwrite_subscribe_info', {
-                    method: 'POST',
-                    body: formData
-                }).then(r=>r.json()).then(function(data){
-                    if (data.status === 'success') {
-                        self.overwriteSubInfo[name] = self.overwriteSubInfo[name] || {};
-                        self.overwriteSubInfo[name].enable = newEnable;
-                    } else {
-                        statusText.textContent = '<%:Failed to update enable status%>';
-                        switchInput.checked = !switchInput.checked;
-                    }
-                }).catch(function(){
-                    statusText.textContent = '<%:Failed to update enable status%>';
-                    switchInput.checked = !switchInput.checked;
-                });
-            };
-
-            var switchSpan = document.createElement('span');
-            switchSpan.className = 'oc-switch-slider';
-
-            switchLabel.appendChild(switchInput);
-            switchLabel.appendChild(switchSpan);
 
             titleRow.appendChild(title);
-            titleRow.appendChild(switchLabel);
             card.appendChild(titleRow);
 
+            var sub = self.overwriteSubInfo[name] || {};
             var info = document.createElement('div');
             info.className = 'overwrite-info';
-            info.textContent = sub.url ? 'HTTP' : '<%:Local File%>';
+            info.textContent = sub.url ? '<%:Subscription%>' : '<%:Local File%>';
             card.appendChild(info);
+
             card.onclick = function(e) {
                 if (self.currentConfigFile !== customFile.path) {
                     self.currentConfigFile = customFile.path;
@@ -1478,6 +1470,7 @@ var ConfigEditor = {
         }
 
         var files = self.overwriteFiles.filter((f, i) => i !== customIdx);
+        self.overwriteFileCardCount = files.length;
         files.forEach(function(file, idx) {
             var name = file.name || (file.path ? file.path.split('/').pop() : '');
             var card = document.createElement('div');
@@ -1514,7 +1507,7 @@ var ConfigEditor = {
                 formData.append('url', sub.url || '');
                 formData.append('update_days', sub.update_days || '');
                 formData.append('update_hour', sub.update_hour || '');
-                formData.append('order', sub.order || '');
+                formData.append('order', (typeof sub.order !== 'undefined' && sub.order !== null && sub.order !== '') ? sub.order : idx);
                 formData.append('param', sub.param || '');
                 formData.append('enable', newEnable);
                 fetch('/cgi-bin/luci/admin/services/openclash/overwrite_subscribe_info', {
@@ -1546,7 +1539,7 @@ var ConfigEditor = {
 
             var info = document.createElement('div');
             info.className = 'overwrite-info';
-            info.textContent = sub.url ? 'HTTP' : '<%:Local File%>';
+            info.textContent = sub.url ? '<%:Subscription%>' : '<%:Local File%>';
             card.appendChild(info);
 
             if (sub.type === 'http') {
@@ -1568,7 +1561,7 @@ var ConfigEditor = {
                     formData.append('url', sub.url || '');
                     formData.append('update_days', sub.update_days || '');
                     formData.append('update_hour', sub.update_hour || '');
-                    formData.append('order', sub.order || '');
+                    formData.append('order', (typeof sub.order !== 'undefined' && sub.order !== null && sub.order !== '') ? sub.order : idx);
                     formData.append('param', sub.param || '');
                     formData.append('enable', typeof sub.enable !== 'undefined' ? sub.enable : 1);
                     fetch('/cgi-bin/luci/admin/services/openclash/overwrite_subscribe_info', {
@@ -1604,7 +1597,7 @@ var ConfigEditor = {
             var gear = document.createElement('button');
             gear.className = 'icon-btn overwrite-gear-btn';
             gear.type = 'button';
-            gear.title = '<%:Edit Subscription Info%>';
+            gear.title = '<%:Edit Module Info%>';
             gear.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
             gear.onclick = function(e) {
                 e.stopPropagation();
@@ -2420,6 +2413,7 @@ var ConfigEditor = {
                         var formData = new FormData();
                         formData.append('filename', filename);
                         formData.append('config_file', fileContent);
+                        formData.append('order', self.overwriteFileCardCount + 1);
 
                         fetch('/cgi-bin/luci/admin/services/openclash/upload_overwrite', {
                             method: 'POST',
@@ -2447,6 +2441,7 @@ var ConfigEditor = {
                     var formData = new FormData();
                     formData.append('filename', filename);
                     formData.append('type', 'file');
+                    formData.append('order', self.overwriteFileCardCount + 1);
                     fetch('/cgi-bin/luci/admin/services/openclash/overwrite_subscribe_info', {
                         method: 'POST',
                         body: formData
@@ -2497,6 +2492,7 @@ var ConfigEditor = {
                 formData.append('filename', filename);
                 formData.append('type', type);
                 formData.append('param', param);
+                formData.append('order', self.overwriteFileCardCount + 1);
                 if (type === 'http') {
                     formData.append('url', url);
                     formData.append('update_days', update_days);
