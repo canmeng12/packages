@@ -1,0 +1,24 @@
+--- luci-app-passwall/Makefile
++++ luci-app-passwall/Makefile
+@@ -89,18 +89,18 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Client
+ 	bool "Include Shadowsocks Libev Client"
+ 	select PACKAGE_shadowsocks-libev-ss-local
+ 	select PACKAGE_shadowsocks-libev-ss-redir
+-	default y
++	default n
+ 
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Libev_Server
+ 	bool "Include Shadowsocks Libev Server"
+ 	select PACKAGE_shadowsocks-libev-ss-server
+-	default y if aarch64||arm||i386||x86_64
++	default n
+ 
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
+ 	bool "Include Shadowsocks Rust Client"
+ 	depends on aarch64||arm||i386||mips||mipsel||x86_64
+ 	select PACKAGE_shadowsocks-rust-sslocal
+-	default y if aarch64
++	default y
+ 
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server
+ 	bool "Include Shadowsocks Rust Server"
