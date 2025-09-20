@@ -1,0 +1,11 @@
+--- luci-app-passwall2/Makefile
++++ luci-app-passwall2/Makefile
+@@ -103,7 +104,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
+ 	bool "Include Shadowsocks Rust Client"
+ 	depends on aarch64||arm||i386||mips||mipsel||x86_64
+ 	select PACKAGE_shadowsocks-rust-sslocal
+-	default y if aarch64
++	default n
+ 
+ config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server
+ 	bool "Include Shadowsocks Rust Server"
