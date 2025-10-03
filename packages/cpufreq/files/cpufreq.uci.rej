@@ -1,0 +1,18 @@
+--- packages/cpufreq/files/cpufreq.uci
++++ packages/cpufreq/files/cpufreq.uci
+@@ -45,12 +45,12 @@ case "$DISTRIB_TARGET" in
+ 			uci_write_config 6 schedutil 816000 2208000
+ 		elif echo "$CPU_POLICYS" | grep -q "4"; then
+ 			# RK3399
+-			uci_write_config 0 schedutil 600000 1608000
+-			uci_write_config 4 schedutil 600000 2016000
++			uci_write_config 0 schedutil 600000 1800000
++			uci_write_config 4 schedutil 600000 2208000
+ 		else
+ 			if ! echo "$CPU_FREQS" | grep -q "1992000"; then
+ 				# RK3328
+-				CPU_MAX_FREQ="1512000"
++				CPU_MAX_FREQ="1608000"
+ 			fi
+ 			uci_write_config 0 schedutil 816000 "$CPU_MAX_FREQ"
+ 		fi
