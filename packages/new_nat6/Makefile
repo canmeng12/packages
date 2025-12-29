@@ -20,7 +20,7 @@ endef
 
 define Package/nat6/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_DATA) ./files/nat6.hotplug $(1)/etc/hotplug.d/iface/90-nat6.hotplug
+	$(INSTALL_DATA) ./files/nat6.hotplug $(1)/etc/hotplug.d/iface/90-nat6
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/nat6.init $(1)/etc/init.d/nat6
 	$(INSTALL_DIR) $(1)/usr/share/ucitrack

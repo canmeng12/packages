@@ -78,6 +78,7 @@ stop() {
 	ip -6 r del default via $gateway dev $device 2>/dev/null
 	uci -q batch <<-EOF >/dev/null
 		del dhcp.lan.ra_default
+		set dhcp.lan.ra_default='1'
 		commit dhcp
 EOF
 	if [ "$(uci -q get dhcp.lan.ra_slaac)" != "" ]; then
