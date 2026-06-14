@@ -29,7 +29,7 @@ common_config() {
 	if [ -z $(uci -q get network.globals.ula_prefix) ] || [ $(uci -q get network.globals.ula_prefix | grep -c "/48") != 1 ]; then
 		r1=$(dd if=/dev/urandom bs=1 count=1 2>/dev/null | hexdump -e '1/1 "%02x"')
 		uci -q batch <<-EOF >/dev/null
-			set network.globals.ula_prefix="fd$r1:2024::/48"
+			set network.globals.ula_prefix="fd$r1:$(date +%Y)::/48"
 			commit network
 EOF
 		/etc/init.d/network reload

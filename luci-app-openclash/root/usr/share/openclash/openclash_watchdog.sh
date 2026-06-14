@@ -5,20 +5,11 @@
 . /usr/share/openclash/uci.sh
 
 LOG_FILE="/tmp/openclash.log"
-CONFIG_FILE="/etc/openclash/$(uci_get_config "config_path" |awk -F '/' '{print $5}' 2>/dev/null)"
-ipv6_enable=$(uci_get_config "ipv6_enable" || echo 0)
-enable_redirect_dns=$(uci_get_config "enable_redirect_dns")
-dns_port=$(uci_get_config "dns_port")
-disable_masq_cache=$(uci_get_config "disable_masq_cache")
-cfg_update_interval=$(uci_get_config "config_update_interval" || echo 60)
-log_size=$(uci_get_config "log_size" || echo 1024)
-router_self_proxy=$(uci_get_config "router_self_proxy" || echo 1)
-stream_auto_select_interval=$(uci_get_config "stream_auto_select_interval" || echo 30)
-skip_proxy_address=$(uci_get_config "skip_proxy_address" || echo 0)
-CFG_UPDATE_INT=1
+CLASH="/etc/openclash/clash"
+CFG_UPDATE_INT=0
 SKIP_PROXY_ADDRESS=1
 SKIP_PROXY_ADDRESS_INTERVAL=30
-STREAM_AUTO_SELECT=1
+STREAM_AUTO_SELECT=0
 FIREWALL_RELOAD=0
 MAX_FIREWALL_RELOAD=3
 FW4=$(command -v fw4)
@@ -30,7 +21,7 @@ ruby -ryaml -rYAML -I "/usr/share/openclash" -E UTF-8 -e "
 begin
    Value = YAML.load_file('$CONFIG_FILE');
 rescue Exception => e
-   YAML.LOG('Error: Load File Failed,【' + e.message + '】');
+   YAML.LOG_ERROR('Load File Failed,【' + e.message + '】');
    exit;
 end;
 
@@ -38,8 +29,6 @@ begin
    if not (Value.key?('proxies') or Value.key?('proxy-providers')) then
       exit;
    end
-
-   require 'thread'
 
    servers_to_process = Array.new
 
@@ -57,19 +46,31 @@ begin
             path = provider['path'].start_with?('./') ? '/etc/openclash/' + provider['path'][2..-1] : provider['path']
             if File.exist?(path)
                begin
-                  provider_config = YAML.load_file(path)
+                  if provider.key?('age-secret-key') and not provider['age-secret-key'].to_s.empty?
+                     begin
+                        provider_config = YAML.load_file(path, secret: provider['age-secret-key']) rescue nil
+                     rescue Exception => e
+                        YAML.LOG_WARN('Set Proxies Address Skip Failed,【' + path + ': ' + e.message+'】')
+                        continue
+                     end
+                  else
+                     provider_config = YAML.load_file(path)
+                  end
+
                   if provider_config.is_a?(Hash) and provider_config.key?('proxies') and not provider_config['proxies'].nil?
                      provider_config['proxies'].each do |p|
                         servers_to_process.push(p['server']) if p.key?('server')
                      end
                   end
                rescue Psych::SyntaxError, ArgumentError
-                  begin
-                     syscall = \"lua /usr/share/openclash/openclash_sub_parser.lua \\\"#{path}\\\"\"
-                     sub_servers = IO.popen(syscall).read.split(/\n+/)
-                     servers_to_process.concat(sub_servers) if sub_servers
-                  rescue Exception => e
-                     YAML.LOG('Warning: Failed to parse subscription file with Lua helper ' + path + ': ' + e.message)
+                  if not provider.key?('age-secret-key') or provider['age-secret-key'].to_s.empty?
+                     begin
+                        syscall = \"lua /usr/share/openclash/openclash_sub_parser.lua \\\"#{path}\\\"\"
+                        sub_servers = IO.popen(syscall).read.split(/\n+/)
+                        servers_to_process.concat(sub_servers) if sub_servers
+                     rescue Exception => e
+                        YAML.LOG_WARN('Failed to parse config file with Lua helper【' + path + ': ' + e.message+'】')
+                     end
                   end
                end
             end
@@ -149,17 +150,26 @@ begin
       system(set_commands.join('; ')) if not set_commands.empty?
    end
 rescue Exception => e
-   YAML.LOG('Error: Set Proxies Address Skip Failed,【' + e.message + '】');
+   YAML.LOG_ERROR('Set Proxies Address Skip Failed,【' + e.message + '】');
 end" 2>/dev/null >> $LOG_FILE
 }
 
 while :;
 do
+   CONFIG_FILE="/etc/openclash/$(uci_get_config "config_path" |awk -F '/' '{print $5}' 2>/dev/null)"
+   ipv6_enable=$(uci_get_config "ipv6_enable" || echo 0)
+   enable_redirect_dns=$(uci_get_config "enable_redirect_dns")
+   dns_port=$(uci_get_config "dns_port")
+   disable_masq_cache=$(uci_get_config "disable_masq_cache")
+   log_size=$(uci_get_config "log_size" || echo 1024)
+   router_self_proxy=$(uci_get_config "router_self_proxy" || echo 1)
+   skip_proxy_address=$(uci_get_config "skip_proxy_address" || echo 0)
+
    cfg_update=$(uci_get_config "auto_update")
    cfg_update_mode=$(uci_get_config "config_auto_update_mode")
-   cfg_update_interval_now=$(uci_get_config "config_update_interval" || echo 60)
+   cfg_update_interval=$(uci_get_config "config_update_interval" || echo 60)
    stream_auto_select=$(uci_get_config "stream_auto_select" || echo 0)
-   stream_auto_select_interval_now=$(uci_get_config "stream_auto_select_interval" || echo 30)
+   stream_auto_select_interval=$(uci_get_config "stream_auto_select_interval" || echo 30)
    stream_auto_select_netflix=$(uci_get_config "stream_auto_select_netflix" || echo 0)
    stream_auto_select_disney=$(uci_get_config "stream_auto_select_disney" || echo 0)
    stream_auto_select_hbo_max=$(uci_get_config "stream_auto_select_hbo_max" || echo 0)
@@ -172,6 +182,8 @@ do
    stream_auto_select_bilibili=$(uci_get_config "stream_auto_select_bilibili" || echo 0)
    stream_auto_select_google_not_cn=$(uci_get_config "stream_auto_select_google_not_cn" || echo 0)
    stream_auto_select_openai=$(uci_get_config "stream_auto_select_openai" || echo 0)
+   stream_auto_select_claude=$(uci_get_config "stream_auto_select_claude" || echo 0)
+   stream_auto_select_gemini=$(uci_get_config "stream_auto_select_gemini" || echo 0)
    upnp_lease_file=$(uci -q get upnpd.config.upnp_lease_file)
 
 #wait for core start complete
@@ -182,6 +194,8 @@ done >/dev/null 2>&1
 
 #check the clash service status
 if ! ubus call service list '{"name":"openclash"}' 2>/dev/null | jsonfilter -e '@.openclash.instances.*.running' | grep -q 'true'; then
+   uci -q set openclash.config.enable=0
+   uci -q commit openclash
    /etc/init.d/openclash stop >/dev/null 2>&1
    exit 0
 fi
@@ -193,10 +207,10 @@ fi
    LOGSIZE=`ls -l /tmp/openclash.log |awk '{print int($5/1024)}'`
    if [ "$LOGSIZE" -gt "$log_size" ]; then
    : > /tmp/openclash.log
-   LOG_OUT "Watchdog: Log Size Limit, Clean Up All Log Records..."
+   LOG_WATCHDOG "Log Size Limit, Clean Up All Log Records..."
    fi
 
-## 转发顺序
+## 防火墙检查
    if [ "$FIREWALL_RELOAD" -le "$MAX_FIREWALL_RELOAD" ]; then
       if [ -z "$FW4" ]; then
          nat_last_line=$(iptables -t nat -nL PREROUTING --line-number 2>/dev/null | awk 'END {print $1}')
@@ -211,7 +225,13 @@ fi
       fi
 
       if ([ "$nat_last_line" != "$nat_op_line" ] && [ -n "$nat_op_line" ]) || ([ "$man_last_line" != "$man_op_line" ] && [ -n "$man_op_line" ]); then
-         LOG_OUT "Watchdog: Setting Firewall For Rules Order..."
+         ## 转发顺序检查
+         LOG_WATCHDOG "Setting Firewall For Rules Order..."
+         /etc/init.d/openclash reload "firewall"
+         let FIREWALL_RELOAD++
+      elif [ -n "$(ip tuntap list |grep utun)" ] && [ -z "$(ip route list table 354)" ]; then
+         ## 路由表检查
+         LOG_WATCHDOG "Setting Firewall For IP Rules Table Recreate..."
          /etc/init.d/openclash reload "firewall"
          let FIREWALL_RELOAD++
       else
@@ -339,7 +359,7 @@ fi
 ## DNS转发劫持
    if [ "$enable_redirect_dns" = "1" ]; then
       if [ -z "$(uci -q get dhcp.@dnsmasq[0].server |grep "$dns_port")" ] || [ ! -z "$(uci -q get dhcp.@dnsmasq[0].server |awk -F ' ' '{print $2}')" ]; then
-         LOG_OUT "Watchdog: Force Reset DNS Hijack..."
+         LOG_WATCHDOG "Force Reset DNS Hijack..."
          uci -q del dhcp.@dnsmasq[-1].server
          uci -q add_list dhcp.@dnsmasq[0].server=127.0.0.1#"$dns_port"
          uci -q delete dhcp.@dnsmasq[0].resolvfile
@@ -354,74 +374,77 @@ fi
 
 ## 配置文件循环更新
    if [ "$cfg_update" -eq 1 ] && [ "$cfg_update_mode" -eq 1 ]; then
-      [ "$cfg_update_interval" -ne "$cfg_update_interval_now" ] && CFG_UPDATE_INT=0 && cfg_update_interval="$cfg_update_interval_now"
       if [ "$CFG_UPDATE_INT" -ne 0 ]; then
-         [ "$(expr "$CFG_UPDATE_INT" % "$cfg_update_interval_now")" -eq 0 ] && /usr/share/openclash/openclash.sh
+         [ "$(expr "$CFG_UPDATE_INT" % "$cfg_update_interval")" -eq 0 ] && /usr/share/openclash/openclash.sh
       fi
       CFG_UPDATE_INT=$(expr "$CFG_UPDATE_INT" + 1)
    fi
 
-##Dler Cloud Checkin
-   /usr/share/openclash/openclash_dler_checkin.lua >/dev/null 2>&1
-
 ##STREAMING_UNLOCK_CHECK
    if [ "$stream_auto_select" -eq 1 ] && [ "$router_self_proxy" -eq 1 ]; then
-      [ "$stream_auto_select_interval" -ne "$stream_auto_select_interval_now" ] && STREAM_AUTO_SELECT=1 && stream_auto_select_interval="$stream_auto_select_interval_now"
       if [ "$STREAM_AUTO_SELECT" -ne 0 ]; then
-         if [ "$(expr "$STREAM_AUTO_SELECT" % "$stream_auto_select_interval_now")" -eq 0 ] || [ "$STREAM_AUTO_SELECT" -eq 1 ]; then
+         if [ "$(expr "$STREAM_AUTO_SELECT" % "$stream_auto_select_interval")" -eq 0 ] || [ "$STREAM_AUTO_SELECT" -eq 1 ]; then
             if [ "$stream_auto_select_netflix" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For Netflix Unlock..."
+               LOG_TIP "【Netflix】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "Netflix" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_disney" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For Disney Plus Unlock..."
+               LOG_TIP "【Disney Plus】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "Disney Plus" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_google_not_cn" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For Google Not CN Unlock..."
+               LOG_TIP "【Google Not CN】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "Google" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_ytb" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For YouTube Premium Unlock..."
+               LOG_TIP "【YouTube Premium】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "YouTube Premium" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_prime_video" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For Amazon Prime Video Unlock..."
+               LOG_TIP "【Amazon Prime Video】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "Amazon Prime Video" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_hbo_max" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For HBO Max Unlock..."
+               LOG_TIP "【HBO Max】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "HBO Max" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_tvb_anywhere" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For TVB Anywhere+ Unlock..."
+               LOG_TIP "【TVB Anywhere+】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "TVB Anywhere+" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_dazn" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For DAZN Unlock..."
+               LOG_TIP "【DAZN】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "DAZN" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_paramount_plus" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For Paramount Plus Unlock..."
+               LOG_TIP "【Paramount Plus】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "Paramount Plus" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_discovery_plus" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For Discovery Plus Unlock..."
+               LOG_TIP "【Discovery Plus】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "Discovery Plus" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_bilibili" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For Bilibili Unlock..."
+               LOG_TIP "【Bilibili】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "Bilibili" >> $LOG_FILE
             fi
             if [ "$stream_auto_select_openai" -eq 1 ]; then
-               LOG_OUT "Tip: Start Auto Select Proxy For OpenAI Unlock..."
+               LOG_TIP "【OpenAI】Start Auto Select Unlock Proxy..."
                /usr/share/openclash/openclash_streaming_unlock.lua "OpenAI" >> $LOG_FILE
+            fi
+            if [ "$stream_auto_select_claude" -eq 1 ]; then
+               LOG_TIP "【Claude】Start Auto Select Unlock Proxy..."
+               /usr/share/openclash/openclash_streaming_unlock.lua "Claude" >> $LOG_FILE
+            fi
+            if [ "$stream_auto_select_gemini" -eq 1 ]; then
+               LOG_TIP "【Gemini】Start Auto Select Unlock Proxy..."
+               /usr/share/openclash/openclash_streaming_unlock.lua "Gemini" >> $LOG_FILE
             fi
          fi
       fi
       STREAM_AUTO_SELECT=$(expr "$STREAM_AUTO_SELECT" + 1)
    elif [ "$router_self_proxy" != "1" ] && [ "$stream_auto_select" -eq 1 ]; then
-      LOG_OUT "Error: Streaming Unlock Could not Work Because of Router-Self Proxy Disabled, Exiting..."
+      LOG_ERROR "Streaming Unlock Could not Work Because of Router-Self Proxy Disabled, Exiting..."
    fi
 
    SLOG_CLEAN

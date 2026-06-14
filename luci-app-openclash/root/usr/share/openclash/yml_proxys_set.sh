@@ -16,16 +16,13 @@ del_lock() {
 
 SERVER_FILE="/tmp/yaml_servers.yaml"
 PROXY_PROVIDER_FILE="/tmp/yaml_provider.yaml"
-servers_if_update=$(uci_get_config "servers_if_update")
-config_auto_update=$(uci_get_config "auto_update")
 CONFIG_FILE=$(uci_get_config "config_path")
 CONFIG_NAME=$(echo "$CONFIG_FILE" |awk -F '/' '{print $5}' 2>/dev/null)
-UPDATE_CONFIG_FILE=$(uci_get_config "config_update_path")
-UPDATE_CONFIG_NAME=$(echo "$UPDATE_CONFIG_FILE" |awk -F '/' '{print $3}' 2>/dev/null)
+UPDATE_CONFIG_FILE=$1
+UPDATE_CONFIG_NAME=$(echo "$UPDATE_CONFIG_FILE" |awk -F '/' '{print $5}' 2>/dev/null)
 UCI_DEL_LIST="uci -q del_list openclash.config.new_servers_group"
 UCI_ADD_LIST="uci -q add_list openclash.config.new_servers_group"
 UCI_SET="uci -q set openclash.config."
-MIX_PROXY=$(uci_get_config "mix_proxies")
 servers_name="/tmp/servers_name.list"
 proxy_provider_name="/tmp/provider_name.list"
 set_lock
@@ -51,20 +48,6 @@ if [ -z "$CONFIG_NAME" ]; then
    CONFIG_NAME="config.yaml"
 fi
 
-yml_other_rules_del()
-{
-	 local section="$1"
-   local enabled config
-   config_get_bool "enabled" "$section" "enabled" "1"
-   config_get "config" "$section" "config" ""
-   config_get "rule_name" "$section" "rule_name" ""
-
-   if [ "$enabled" = "0" ] || [ "$config" != "$2" ] || [ "$rule_name" != "$3" ]; then
-      return
-   else
-      uci -q set openclash."$section".enabled=0
-   fi
-}
 #写入代理集到配置文件
 yml_proxy_provider_set()
 {
@@ -105,11 +88,7 @@ yml_proxy_provider_set()
       return
    fi
 
-   if [ ! -z "$if_game_proxy" ] && [ "$if_game_proxy" != "$name" ] && [ "$if_game_proxy_type" = "proxy-provider" ]; then
-      return
-   fi
-
-   if [ "$MIX_PROXY" != "1" ] && [ ! -z "$config" ] && [ "$config" != "$CONFIG_NAME" ] && [ "$config" != "all" ]; then
+   if [ ! -z "$config" ] && [ "$config" != "$CONFIG_NAME" ] && [ "$config" != "all" ]; then
       return
    fi
 
@@ -207,135 +186,6 @@ yml_servers_set()
    config_get "name" "$section" "name" ""
    config_get "server" "$section" "server" ""
    config_get "port" "$section" "port" ""
-   config_get "dialer_proxy" "$section" "dialer_proxy" ""
-   config_get "cipher" "$section" "cipher" ""
-   config_get "cipher_ssr" "$section" "cipher_ssr" ""
-   config_get "password" "$section" "password" ""
-   config_get "securitys" "$section" "securitys" ""
-   config_get "udp" "$section" "udp" ""
-   config_get "obfs" "$section" "obfs" ""
-   config_get "obfs_ssr" "$section" "obfs_ssr" ""
-   config_get "obfs_param" "$section" "obfs_param" ""
-   config_get "obfs_vmess" "$section" "obfs_vmess" ""
-   config_get "obfs_trojan" "$section" "obfs_trojan" ""
-   config_get "protocol" "$section" "protocol" ""
-   config_get "protocol_param" "$section" "protocol_param" ""
-   config_get "host" "$section" "host" ""
-   config_get "mux" "$section" "mux" ""
-   config_get "custom" "$section" "custom" ""
-   config_get "tls" "$section" "tls" ""
-   config_get "skip_cert_verify" "$section" "skip_cert_verify" ""
-   config_get "path" "$section" "path" ""
-   config_get "alterId" "$section" "alterId" ""
-   config_get "uuid" "$section" "uuid" ""
-   config_get "auth_name" "$section" "auth_name" ""
-   config_get "auth_pass" "$section" "auth_pass" ""
-   config_get "psk" "$section" "psk" ""
-   config_get "obfs_snell" "$section" "obfs_snell" ""
-   config_get "snell_version" "$section" "snell_version" ""
-   config_get "sni" "$section" "sni" ""
-   config_get "alpn" "$section" "alpn" ""
-   config_get "http_path" "$section" "http_path" ""
-   config_get "keep_alive" "$section" "keep_alive" ""
-   config_get "servername" "$section" "servername" ""
-   config_get "h2_path" "$section" "h2_path" ""
-   config_get "h2_host" "$section" "h2_host" ""
-   config_get "grpc_service_name" "$section" "grpc_service_name" ""
-   config_get "ws_opts_path" "$section" "ws_opts_path" ""
-   config_get "ws_opts_headers" "$section" "ws_opts_headers" ""
-   config_get "max_early_data" "$section" "max_early_data" ""
-   config_get "early_data_header_name" "$section" "early_data_header_name" ""
-   config_get "trojan_ws_path" "$section" "trojan_ws_path" ""
-   config_get "trojan_ws_headers" "$section" "trojan_ws_headers" ""
-   config_get "interface_name" "$section" "interface_name" ""
-   config_get "routing_mark" "$section" "routing_mark" ""
-   config_get "obfs_vless" "$section" "obfs_vless" ""
-   config_get "vless_flow" "$section" "vless_flow" ""
-   config_get "http_headers" "$section" "http_headers" ""
-   config_get "hysteria_protocol" "$section" "hysteria_protocol" ""
-   config_get "hysteria2_protocol" "$section" "hysteria2_protocol" ""
-   config_get "hysteria_up" "$section" "hysteria_up" ""
-   config_get "hysteria_down" "$section" "hysteria_down" ""
-   config_get "hysteria_alpn" "$section" "hysteria_alpn" ""
-   config_get "hysteria_obfs" "$section" "hysteria_obfs" ""
-   config_get "hysteria_auth" "$section" "hysteria_auth" ""
-   config_get "hysteria_auth_str" "$section" "hysteria_auth_str" ""
-   config_get "hysteria_ca" "$section" "hysteria_ca" ""
-   config_get "hysteria_ca_str" "$section" "hysteria_ca_str" ""
-   config_get "recv_window_conn" "$section" "recv_window_conn" ""
-   config_get "recv_window" "$section" "recv_window" ""
-   config_get "disable_mtu_discovery" "$section" "disable_mtu_discovery" ""
-   config_get "initial_stream_receive_window" "$section" "initial_stream_receive_window" ""
-   config_get "max_stream_receive_window" "$section" "max_stream_receive_window" ""
-   config_get "initial_connection_receive_window" "$section" "initial_connection_receive_window" ""
-   config_get "max_connection_receive_window" "$section" "max_connection_receive_window" ""
-   config_get "xudp" "$section" "xudp" ""
-   config_get "packet_encoding" "$section" "packet_encoding" ""
-   config_get "global_padding" "$section" "global_padding" ""
-   config_get "authenticated_length" "$section" "authenticated_length" ""
-   config_get "wg_ip" "$section" "wg_ip" ""
-   config_get "wg_ipv6" "$section" "wg_ipv6" ""
-   config_get "private_key" "$section" "private_key" ""
-   config_get "public_key" "$section" "public_key" ""
-   config_get "preshared_key" "$section" "preshared_key" ""
-   config_get "wg_dns" "$section" "wg_dns" ""
-   config_get "public_key" "$section" "public_key" ""
-   config_get "preshared_key" "$section" "preshared_key" ""
-   config_get "wg_mtu" "$section" "wg_mtu" ""
-   config_get "tc_ip" "$section" "tc_ip" ""
-   config_get "tc_token" "$section" "tc_token" ""
-   config_get "tc_uuid" "$section" "tc_uuid" ""
-   config_get "tc_password" "$section" "tc_password" ""
-   config_get "udp_relay_mode" "$section" "udp_relay_mode" ""
-   config_get "congestion_controller" "$section" "congestion_controller" ""
-   config_get "tc_alpn" "$section" "tc_alpn" ""
-   config_get "disable_sni" "$section" "disable_sni" ""
-   config_get "reduce_rtt" "$section" "reduce_rtt" ""
-   config_get "heartbeat_interval" "$section" "heartbeat_interval" ""
-   config_get "request_timeout" "$section" "request_timeout" ""
-   config_get "max_udp_relay_packet_size" "$section" "max_udp_relay_packet_size" ""
-   config_get "fast_open" "$section" "fast_open" ""
-   config_get "fingerprint" "$section" "fingerprint" ""
-   config_get "ports" "$section" "ports" ""
-   config_get "hop_interval" "$section" "hop_interval" ""
-   config_get "max_open_streams" "$section" "max_open_streams" ""
-   config_get "obfs_password" "$section" "obfs_password" ""
-   config_get "packet_addr" "$section" "packet_addr" ""
-   config_get "client_fingerprint" "$section" "client_fingerprint" ""
-   config_get "ip_version" "$section" "ip_version" ""
-   config_get "tfo" "$section" "tfo" ""
-   config_get "udp_over_tcp" "$section" "udp_over_tcp" ""
-   config_get "reality_public_key" "$section" "reality_public_key" ""
-   config_get "reality_short_id" "$section" "reality_short_id" ""
-   config_get "obfs_version_hint" "$section" "obfs_version_hint" ""
-   config_get "obfs_restls_script" "$section" "obfs_restls_script" ""
-   config_get "multiplex" "$section" "multiplex" ""
-   config_get "multiplex_protocol" "$section" "multiplex_protocol" ""
-   config_get "multiplex_max_connections" "$section" "multiplex_max_connections" ""
-   config_get "multiplex_min_streams" "$section" "multiplex_min_streams" ""
-   config_get "multiplex_max_streams" "$section" "multiplex_max_streams" ""
-   config_get "multiplex_padding" "$section" "multiplex_padding" ""
-   config_get "multiplex_statistic" "$section" "multiplex_statistic" ""
-   config_get "multiplex_only_tcp" "$section" "multiplex_only_tcp" ""
-   config_get "other_parameters" "$section" "other_parameters" ""
-   config_get "hysteria_obfs_password" "$section" "hysteria_obfs_password" ""
-   config_get "port_range" "$section" "port_range" ""
-   config_get "username" "$section" "username" ""
-   config_get "transport" "$section" "transport" "TCP"
-   config_get "multiplexing" "$section" "multiplexing" "MULTIPLEXING_LOW"
-   config_get "private_key" "$section" "private_key" ""
-   config_get "private_key_passphrase" "$section" "private_key_passphrase" ""
-   config_get "host_key" "$section" "host_key" ""
-   config_get "host_key_algorithms" "$section" "host_key_algorithms" ""
-   config_get "idle_session_check_interval" "$section" "idle_session_check_interval" ""
-   config_get "idle_session_timeout" "$section" "idle_session_timeout" ""
-   config_get "min_idle_session" "$section" "min_idle_session" ""
-   config_get "sudoku_key" "$section" "sudoku_key" ""
-   config_get "aead_method" "$section" "aead_method" "none"
-   config_get "padding_min" "$section" "padding_min" ""
-   config_get "padding_max" "$section" "padding_max" ""
-   config_get "table_type" "$section" "table_type" "prefer_ascii"
-   config_get "http_mask" "$section" "http_mask" "true"
 
    if [ "$enabled" = "0" ]; then
       return
@@ -357,17 +207,14 @@ yml_servers_set()
       return
    fi
 
-   if [ -z "$password" ]; then
-   	 if [ "$type" = "ss" ] || [ "$type" = "trojan" ] || [ "$type" = "ssr" ]; then
-        return
-     fi
-   fi
+    if [ "$type" = "ss" ] || [ "$type" = "trojan" ] || [ "$type" = "ssr" ]; then
+        config_get "password" "$section" "password" ""
+        if [ -z "$password" ]; then
+            return
+        fi
+    fi
 
-   if [ ! -z "$if_game_proxy" ] && [ "$if_game_proxy" != "$name" ] && [ "$if_game_proxy_type" = "proxy" ]; then
-      return
-   fi
-
-   if [ "$MIX_PROXY" != "1" ] && [ ! -z "$config" ] && [ "$config" != "$CONFIG_NAME" ] && [ "$config" != "all" ]; then
+   if [ ! -z "$config" ] && [ "$config" != "$CONFIG_NAME" ] && [ "$config" != "all" ]; then
       return
    fi
 
@@ -389,59 +236,27 @@ yml_servers_set()
    fi
    LOG_OUT "Start Writing【$CONFIG_NAME - $type - $name】Proxy To Config File..."
 
-   if [ "$obfs" != "none" ] && [ -n "$obfs" ]; then
-      if [ "$obfs" = "websocket" ]; then
-         obfss="plugin: v2ray-plugin"
-      elif [ "$obfs" = "shadow-tls" ]; then
-        obfss="plugin: shadow-tls"
-      elif [ "$obfs" = "restls" ]; then
-        obfss="plugin: restls"
-      else
-         obfss="plugin: obfs"
-      fi
-   else
-      obfss=""
-   fi
-
-   if [ "$obfs_vless" = "ws" ]; then
-      obfs_vless="network: ws"
-   fi
-
-   if [ "$obfs_vless" = "grpc" ]; then
-      obfs_vless="network: grpc"
-   fi
-
-   if [ "$obfs_vless" = "tcp" ]; then
-      obfs_vless="network: tcp"
-   fi
-
-   if [ "$obfs_vmess" = "websocket" ]; then
-      obfs_vmess="network: ws"
-   fi
-
-   if [ "$obfs_vmess" = "http" ]; then
-      obfs_vmess="network: http"
-   fi
-
-   if [ "$obfs_vmess" = "h2" ]; then
-      obfs_vmess="network: h2"
-   fi
-
-   if [ "$obfs_vmess" = "grpc" ]; then
-      obfs_vmess="network: grpc"
-   fi
-
-   if [ ! -z "$custom" ] && [ "$type" = "vmess" ]; then
-      custom="Host: \"$custom\""
-   fi
-
-   if [ ! -z "$path" ]; then
-      if [ "$type" != "vmess" ]; then
-         path="path: \"$path\""
-      elif [ "$obfs_vmess" = "network: ws" ]; then
-         path="ws-path: \"$path\""
-      fi
-   fi
+   config_get "dialer_proxy" "$section" "dialer_proxy" ""
+   config_get "udp" "$section" "udp" ""
+   config_get "skip_cert_verify" "$section" "skip_cert_verify" ""
+   config_get "tls" "$section" "tls" ""
+   config_get "sni" "$section" "sni" ""
+   config_get "alpn" "$section" "alpn" ""
+   config_get "fingerprint" "$section" "fingerprint" ""
+   config_get "client_fingerprint" "$section" "client_fingerprint" ""
+   config_get "ip_version" "$section" "ip_version" ""
+   config_get "tfo" "$section" "tfo" ""
+   config_get "multiplex" "$section" "multiplex" ""
+   config_get "multiplex_protocol" "$section" "multiplex_protocol" ""
+   config_get "multiplex_max_connections" "$section" "multiplex_max_connections" ""
+   config_get "multiplex_min_streams" "$section" "multiplex_min_streams" ""
+   config_get "multiplex_max_streams" "$section" "multiplex_max_streams" ""
+   config_get "multiplex_padding" "$section" "multiplex_padding" ""
+   config_get "multiplex_statistic" "$section" "multiplex_statistic" ""
+   config_get "multiplex_only_tcp" "$section" "multiplex_only_tcp" ""
+   config_get "interface_name" "$section" "interface_name" ""
+   config_get "routing_mark" "$section" "routing_mark" ""
+   config_get "other_parameters" "$section" "other_parameters" ""
 
    if [ "$client_fingerprint" = "none" ]; then
         client_fingerprint=""
@@ -453,6 +268,35 @@ yml_servers_set()
 
 #ss
 if [ "$type" = "ss" ]; then
+   config_get "cipher" "$section" "cipher" ""
+   config_get "obfs" "$section" "obfs" ""
+   config_get "host" "$section" "host" ""
+   config_get "mux" "$section" "mux" ""
+   config_get "custom" "$section" "custom" ""
+   config_get "path" "$section" "path" ""
+   config_get "obfs_password" "$section" "obfs_password" ""
+   config_get "obfs_version_hint" "$section" "obfs_version_hint" ""
+   config_get "obfs_restls_script" "$section" "obfs_restls_script" ""
+   config_get "udp_over_tcp" "$section" "udp_over_tcp" ""
+
+   if [ "$obfs" != "none" ] && [ -n "$obfs" ]; then
+      if [ "$obfs" = "websocket" ]; then
+            obfss="plugin: v2ray-plugin"
+      elif [ "$obfs" = "shadow-tls" ]; then
+            obfss="plugin: shadow-tls"
+      elif [ "$obfs" = "restls" ]; then
+            obfss="plugin: restls"
+      else
+            obfss="plugin: obfs"
+      fi
+   else
+      obfss=""
+   fi
+
+   if [ ! -z "$path" ]; then
+      path="path: \"$path\""
+   fi
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -553,6 +397,12 @@ fi
 
 #ssr
 if [ "$type" = "ssr" ]; then
+   config_get "cipher_ssr" "$section" "cipher_ssr" ""
+   config_get "obfs_ssr" "$section" "obfs_ssr" ""
+   config_get "protocol" "$section" "protocol" ""
+   config_get "obfs_param" "$section" "obfs_param" ""
+   config_get "protocol_param" "$section" "protocol_param" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -582,6 +432,48 @@ fi
 
 #vmess
 if [ "$type" = "vmess" ]; then
+   config_get "uuid" "$section" "uuid" ""
+   config_get "alterId" "$section" "alterId" ""
+   config_get "securitys" "$section" "securitys" ""
+   config_get "xudp" "$section" "xudp" ""
+   config_get "packet_encoding" "$section" "packet_encoding" ""
+   config_get "global_padding" "$section" "global_padding" ""
+   config_get "authenticated_length" "$section" "authenticated_length" ""
+   config_get "servername" "$section" "servername" ""
+   config_get "obfs_vmess" "$section" "obfs_vmess" ""
+   config_get "custom" "$section" "custom" ""
+   config_get "path" "$section" "path" ""
+   config_get "ws_opts_path" "$section" "ws_opts_path" ""
+   config_get "ws_opts_headers" "$section" "ws_opts_headers" ""
+   config_get "max_early_data" "$section" "max_early_data" ""
+   config_get "early_data_header_name" "$section" "early_data_header_name" ""
+   config_get "http_path" "$section" "http_path" ""
+   config_get "keep_alive" "$section" "keep_alive" ""
+   config_get "h2_path" "$section" "h2_path" ""
+   config_get "h2_host" "$section" "h2_host" ""
+   config_get "grpc_service_name" "$section" "grpc_service_name" ""
+
+   if [ "$obfs_vmess" = "websocket" ]; then
+      obfs_vmess="network: ws"
+   fi
+   if [ "$obfs_vmess" = "http" ]; then
+      obfs_vmess="network: http"
+   fi
+   if [ "$obfs_vmess" = "h2" ]; then
+      obfs_vmess="network: h2"
+   fi
+   if [ "$obfs_vmess" = "grpc" ]; then
+      obfs_vmess="network: grpc"
+   fi
+
+   if [ ! -z "$custom" ]; then
+      custom="Host: \"$custom\""
+   fi
+
+   if [ ! -z "$path" ] && [ "$obfs_vmess" = "network: ws" ]; then
+      path="ws-path: \"$path\""
+   fi
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -727,6 +619,11 @@ fi
 
 #anytls
 if [ "$type" = "anytls" ]; then
+   config_get "password" "$section" "password" ""
+   config_get "idle_session_check_interval" "$section" "idle_session_check_interval" ""
+   config_get "idle_session_timeout" "$section" "idle_session_timeout" ""
+   config_get "min_idle_session" "$section" "min_idle_session" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -783,6 +680,11 @@ fi
 
 #Mieru
 if [ "$type" = "mieru" ]; then
+   config_get "port_range" "$section" "port_range" ""
+   config_get "username" "$section" "username" ""
+   config_get "transport" "$section" "transport" "TCP"
+   config_get "multiplexing" "$section" "multiplexing" "MULTIPLEXING_LOW"
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -813,6 +715,21 @@ fi
 
 #Tuic
 if [ "$type" = "tuic" ]; then
+   config_get "tc_ip" "$section" "tc_ip" ""
+   config_get "tc_token" "$section" "tc_token" ""
+   config_get "tc_uuid" "$section" "tc_uuid" ""
+   config_get "tc_password" "$section" "tc_password" ""
+   config_get "udp_relay_mode" "$section" "udp_relay_mode" ""
+   config_get "congestion_controller" "$section" "congestion_controller" ""
+   config_get "tc_alpn" "$section" "tc_alpn" ""
+   config_get "disable_sni" "$section" "disable_sni" ""
+   config_get "reduce_rtt" "$section" "reduce_rtt" ""
+   config_get "fast_open" "$section" "fast_open" ""
+   config_get "heartbeat_interval" "$section" "heartbeat_interval" ""
+   config_get "request_timeout" "$section" "request_timeout" ""
+   config_get "max_udp_relay_packet_size" "$section" "max_udp_relay_packet_size" ""
+   config_get "max_open_streams" "$section" "max_open_streams" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -899,6 +816,14 @@ fi
 
 #WireGuard
 if [ "$type" = "wireguard" ]; then
+   config_get "wg_ip" "$section" "wg_ip" ""
+   config_get "wg_ipv6" "$section" "wg_ipv6" ""
+   config_get "private_key" "$section" "private_key" ""
+   config_get "public_key" "$section" "public_key" ""
+   config_get "preshared_key" "$section" "preshared_key" ""
+   config_get "wg_dns" "$section" "wg_dns" ""
+   config_get "wg_mtu" "$section" "wg_mtu" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -930,7 +855,7 @@ cat >> "$SERVER_FILE" <<-EOF
     preshared-key: "$preshared_key"
 EOF
     fi
-    if [ -n "$preshared_key" ]; then
+    if [ -n "$wg_dns" ]; then
 cat >> "$SERVER_FILE" <<-EOF
     dns:
 EOF
@@ -950,6 +875,22 @@ fi
 
 #hysteria
 if [ "$type" = "hysteria" ]; then
+   config_get "hysteria_protocol" "$section" "hysteria_protocol" ""
+   config_get "hysteria_up" "$section" "hysteria_up" ""
+   config_get "hysteria_down" "$section" "hysteria_down" ""
+   config_get "hysteria_alpn" "$section" "hysteria_alpn" ""
+   config_get "hysteria_obfs" "$section" "hysteria_obfs" ""
+   config_get "hysteria_auth" "$section" "hysteria_auth" ""
+   config_get "hysteria_auth_str" "$section" "hysteria_auth_str" ""
+   config_get "hysteria_ca" "$section" "hysteria_ca" ""
+   config_get "hysteria_ca_str" "$section" "hysteria_ca_str" ""
+   config_get "recv_window_conn" "$section" "recv_window_conn" ""
+   config_get "recv_window" "$section" "recv_window" ""
+   config_get "disable_mtu_discovery" "$section" "disable_mtu_discovery" ""
+   config_get "fast_open" "$section" "fast_open" ""
+   config_get "ports" "$section" "ports" ""
+   config_get "hop_interval" "$section" "hop_interval" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1054,6 +995,22 @@ fi
 
 #hysteria2
 if [ "$type" = "hysteria2" ]; then
+   config_get "password" "$section" "password" ""
+   config_get "hysteria_up" "$section" "hysteria_up" ""
+   config_get "hysteria_down" "$section" "hysteria_down" ""
+   config_get "hysteria_alpn" "$section" "hysteria_alpn" ""
+   config_get "hysteria_obfs" "$section" "hysteria_obfs" ""
+   config_get "hysteria_obfs_password" "$section" "hysteria_obfs_password" ""
+   config_get "hysteria_ca" "$section" "hysteria_ca" ""
+   config_get "hysteria_ca_str" "$section" "hysteria_ca_str" ""
+   config_get "initial_stream_receive_window" "$section" "initial_stream_receive_window" ""
+   config_get "max_stream_receive_window" "$section" "max_stream_receive_window" ""
+   config_get "initial_connection_receive_window" "$section" "initial_connection_receive_window" ""
+   config_get "max_connection_receive_window" "$section" "max_connection_receive_window" ""
+   config_get "ports" "$section" "ports" ""
+   config_get "hysteria2_protocol" "$section" "hysteria2_protocol" ""
+   config_get "hop_interval" "$section" "hop_interval" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1121,7 +1078,7 @@ EOF
     fi
     if [ -n "$max_stream_receive_window" ]; then
 cat >> "$SERVER_FILE" <<-EOF
-    max_stream_receive_window: "$max_stream_receive_window"
+    max-stream-receive-window: "$max_stream_receive_window"
 EOF
     fi
     if [ -n "$initial_connection_receive_window" ]; then
@@ -1158,6 +1115,35 @@ fi
 
 #vless
 if [ "$type" = "vless" ]; then
+   config_get "uuid" "$section" "uuid" ""
+   config_get "xudp" "$section" "xudp" ""
+   config_get "packet_addr" "$section" "packet_addr" ""
+   config_get "packet_encoding" "$section" "packet_encoding" ""
+   config_get "servername" "$section" "servername" ""
+   config_get "obfs_vless" "$section" "obfs_vless" ""
+   config_get "ws_opts_path" "$section" "ws_opts_path" ""
+   config_get "ws_opts_headers" "$section" "ws_opts_headers" ""
+   config_get "grpc_service_name" "$section" "grpc_service_name" ""
+   config_get "reality_public_key" "$section" "reality_public_key" ""
+   config_get "reality_short_id" "$section" "reality_short_id" ""
+   config_get "vless_flow" "$section" "vless_flow" ""
+   config_get "xhttp_opts_path" "$section" "xhttp_opts_path" ""
+   config_get "xhttp_opts_host" "$section" "xhttp_opts_host" ""
+   config_get "vless_encryption" "$section" "vless_encryption" ""
+
+   if [ "$obfs_vless" = "ws" ]; then
+      obfs_vless="network: ws"
+   fi
+   if [ "$obfs_vless" = "grpc" ]; then
+      obfs_vless="network: grpc"
+   fi
+   if [ "$obfs_vless" = "tcp" ]; then
+      obfs_vless="network: tcp"
+   fi
+   if [ "$obfs_vless" = "xhttp" ]; then
+      obfs_vless="network: xhttp"
+   fi
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1259,6 +1245,11 @@ cat >> "$SERVER_FILE" <<-EOF
     flow: "$vless_flow"
 EOF
             fi
+            if [ -n "$vless_encryption" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+      encryption: "$vless_encryption"
+EOF
+            fi
             if [ -n "$reality_public_key" ] || [ -n "$reality_short_id" ]; then
 cat >> "$SERVER_FILE" <<-EOF
     reality-opts:
@@ -1272,6 +1263,21 @@ EOF
             if [ -n "$reality_short_id" ]; then
 cat >> "$SERVER_FILE" <<-EOF
       short-id: "$reality_short_id"
+EOF
+            fi
+        fi
+        if [ "$obfs_vless" = "network: xhttp" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    xhttp-opts:
+EOF
+            if [ -n "$xhttp_opts_path" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+      path: "$xhttp_opts_path"
+EOF
+            fi
+            if [ -n "$xhttp_opts_host" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+      host: "$xhttp_opts_host"
 EOF
             fi
         fi
@@ -1301,6 +1307,13 @@ fi
 
 #ssh
 if [ "$type" = "ssh" ]; then
+   config_get "auth_name" "$section" "auth_name" ""
+   config_get "auth_pass" "$section" "auth_pass" ""
+   config_get "private_key" "$section" "private_key" ""
+   config_get "private_key_passphrase" "$section" "private_key_passphrase" ""
+   config_get "host_key" "$section" "host_key" ""
+   config_get "host_key_algorithms" "$section" "host_key_algorithms" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1343,6 +1356,9 @@ fi
 
 #socks5
 if [ "$type" = "socks5" ]; then
+   config_get "auth_name" "$section" "auth_name" ""
+   config_get "auth_pass" "$section" "auth_pass" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1383,6 +1399,10 @@ fi
 
 #http
 if [ "$type" = "http" ]; then
+   config_get "auth_name" "$section" "auth_name" ""
+   config_get "auth_pass" "$section" "auth_pass" ""
+   config_get "http_headers" "$section" "http_headers" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1424,6 +1444,11 @@ fi
 
 #trojan
 if [ "$type" = "trojan" ]; then
+   config_get "grpc_service_name" "$section" "grpc_service_name" ""
+   config_get "obfs_trojan" "$section" "obfs_trojan" ""
+   config_get "trojan_ws_path" "$section" "trojan_ws_path" ""
+   config_get "trojan_ws_headers" "$section" "trojan_ws_headers" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1492,6 +1517,11 @@ fi
 
 #snell
 if [ "$type" = "snell" ]; then
+   config_get "psk" "$section" "psk" ""
+   config_get "snell_version" "$section" "snell_version" ""
+   config_get "obfs_snell" "$section" "obfs_snell" ""
+   config_get "host" "$section" "host" ""
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1515,6 +1545,13 @@ fi
 
 #Sudoku
 if [ "$type" = "sudoku" ]; then
+   config_get "sudoku_key" "$section" "sudoku_key" ""
+   config_get "aead_method" "$section" "aead_method" "none"
+   config_get "padding_min" "$section" "padding_min" ""
+   config_get "padding_max" "$section" "padding_max" ""
+   config_get "table_type" "$section" "table_type" "prefer_ascii"
+   config_get "http_mask" "$section" "http_mask" "true"
+
 cat >> "$SERVER_FILE" <<-EOF
   - name: "$name"
     type: $type
@@ -1549,6 +1586,132 @@ EOF
     if [ -n "$http_mask" ]; then
 cat >> "$SERVER_FILE" <<-EOF
     http-mask: $http_mask
+EOF
+    fi
+fi
+
+#MASQUE
+if [ "$type" = "masque" ]; then
+   config_get "masque_private_key" "$section" "masque_private_key" ""
+   config_get "masque_public_key" "$section" "masque_public_key" ""
+   config_get "masque_ip" "$section" "masque_ip" ""
+   config_get "masque_ipv6" "$section" "masque_ipv6" ""
+   config_get "masque_mtu" "$section" "masque_mtu" ""
+   config_get "masque_remote_dns_resolve" "$section" "masque_remote_dns_resolve" ""
+   config_get "masque_dns" "$section" "masque_dns" ""
+
+cat >> "$SERVER_FILE" <<-EOF
+  - name: "$name"
+    type: $type
+    server: "$server"
+    port: $port
+EOF
+    if [ -n "$masque_private_key" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    private-key: "$masque_private_key"
+EOF
+    fi
+    if [ -n "$masque_public_key" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    public-key: "$masque_public_key"
+EOF
+    fi
+    if [ -n "$masque_ip" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    ip: "$masque_ip"
+EOF
+    fi
+    if [ -n "$masque_ipv6" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    ipv6: "$masque_ipv6"
+EOF
+    fi
+    if [ -n "$masque_mtu" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    mtu: $masque_mtu
+EOF
+    fi
+    if [ -n "$masque_remote_dns_resolve" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    remote-dns-resolve: $masque_remote_dns_resolve
+EOF
+    fi
+    if [ ! -z "$udp" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    udp: $udp
+EOF
+   fi
+   if [ ! -z "$masque_dns" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    dns:
+EOF
+        config_list_foreach "$section" "masque_dns" set_alpn
+    fi
+fi
+
+#TrustTunnel
+if [ "$type" = "trusttunnel" ]; then
+   config_get "trusttunnel_username" "$section" "trusttunnel_username" ""
+   config_get "trusttunnel_password" "$section" "trusttunnel_password" ""
+   config_get "trusttunnel_health_check" "$section" "trusttunnel_health_check" ""
+   config_get "trusttunnel_quic" "$section" "trusttunnel_quic" ""
+   config_get "trusttunnel_congestion_controller" "$section" "trusttunnel_congestion_controller" ""
+
+cat >> "$SERVER_FILE" <<-EOF
+  - name: "$name"
+    type: $type
+    server: "$server"
+    port: $port
+EOF
+    if [ -n "$trusttunnel_username" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    username: "$trusttunnel_username"
+EOF
+    fi
+    if [ -n "$trusttunnel_password" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    password: "$trusttunnel_password"
+EOF
+    fi
+    if [ -n "$trusttunnel_health_check" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    health-check: $trusttunnel_health_check
+EOF
+    fi
+    if [ -n "$trusttunnel_quic" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    quic: $trusttunnel_quic
+EOF
+    fi
+    if [ -n "$trusttunnel_congestion_controller" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    congestion-controller: "$trusttunnel_congestion_controller"
+EOF
+    fi
+    if [ -n "$client_fingerprint" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    client-fingerprint: "$client_fingerprint"
+EOF
+    fi
+    if [ -n "$udp" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    udp: $udp
+EOF
+    fi
+    if [ -n "$sni" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    sni: "$sni"
+EOF
+    fi
+    if [ ! -z "$alpn" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    alpn:
+EOF
+        config_list_foreach "$section" "alpn" set_alpn
+    fi
+    if [ ! -z "$skip_cert_verify" ]; then
+cat >> "$SERVER_FILE" <<-EOF
+    skip-cert-verify: $skip_cert_verify
 EOF
     fi
 fi
@@ -1637,25 +1800,6 @@ EOF
 fi
 }
 
-new_servers_group_set()
-{
-   local section="$1"
-   local enabled name
-   config_get_bool "enabled" "$section" "enabled" "1"
-   config_get "name" "$section" "name" ""
-
-   if [ "$enabled" = "0" ]; then
-      return
-   fi
-
-   if [ -z "$name" ] || [ "$(echo $name.yaml)" != "$CONFIG_NAME" ]; then
-      return
-   fi
-
-   new_servers_group_set=1
-
-}
-
 yml_servers_name_get()
 {
 	 local section="$1"
@@ -1677,14 +1821,10 @@ yml_proxy_provider_name_get()
 }
 
 #创建配置文件
-if_game_proxy="$1"
-if_game_proxy_type="$2"
-#创建对比文件防止重复
 config_load "openclash"
 config_foreach yml_servers_name_get "servers"
 config_foreach yml_proxy_provider_name_get "proxy-provider"
-#判断是否启用保留配置
-config_foreach new_servers_group_set "config_subscribe"
+
 #proxy-provider
 LOG_OUT "Start Writing【$CONFIG_NAME】Proxy-providers Setting..."
 echo "proxy-providers:" >$PROXY_PROVIDER_FILE
@@ -1698,8 +1838,6 @@ fi
 rm -rf $proxy_provider_name
 
 #proxy
-rule_sources=$(uci_get_config "rule_sources")
-create_config=$(uci_get_config "create_config")
 LOG_OUT "Start Writing【$CONFIG_NAME】Proxies Setting..."
 echo "proxies:" >$SERVER_FILE
 config_foreach yml_servers_set "servers"
@@ -1712,551 +1850,23 @@ else
 fi
 rm -rf $servers_name
 
-#一键创建配置文件
-if [ "$rule_sources" = "lhie1" ] && [ "$servers_if_update" != "1" ] && [ -z "$if_game_proxy" ]; then
-LOG_OUT "Creating By Using lhie1 Rules..."
-echo "proxy-groups:" >>$SERVER_FILE
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Auto - UrlTest
-    type: url-test
-EOF
-if [ -f "/tmp/Proxy_Server" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    proxies:
-EOF
-fi
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-    url: http://cp.cloudflare.com/generate_204
-    interval: "600"
-    tolerance: "150"
-  - name: Proxy
-    type: select
-    proxies:
-      - Auto - UrlTest
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Domestic
-    type: select
-    proxies:
-      - DIRECT
-      - Proxy
-  - name: Others
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-      - Domestic
-  - name: Microsoft
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat >> "$SERVER_FILE" <<-EOF
-  - name: AI Suite
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Apple
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Apple TV
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Google FCM
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Scholar
-    type: select
-    proxies:
-      - DIRECT
-      - Proxy
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Bilibili
-    type: select
-    proxies:
-      - CN Mainland TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Bahamut
-    type: select
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: HBO Max
-    type: select
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Pornhub
-    type: select
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Netflix
-    type: select
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Disney Plus
-    type: select
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Youtube
-    type: select
-    disable-udp: true
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Discovery Plus
-    type: select
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: DAZN
-    type: select
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Spotify
-    type: select
-    proxies:
-      - Global TV
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Steam
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: TikTok
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: miHoYo
-    type: select
-    proxies:
-      - DIRECT
-      - Proxy
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: AdBlock
-    type: select
-    proxies:
-      - REJECT
-      - DIRECT
-      - Proxy
-  - name: HTTPDNS
-    type: select
-    proxies:
-      - REJECT
-      - DIRECT
-      - Proxy
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: CN Mainland TV
-    type: select
-    proxies:
-      - DIRECT
-      - Proxy
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Asian TV
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Global TV
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Speedtest
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Telegram
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Crypto
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: Discord
-    type: select
-    proxies:
-      - Proxy
-      - DIRECT
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-cat >> "$SERVER_FILE" <<-EOF
-  - name: PayPal
-    type: select
-    proxies:
-      - DIRECT
-      - Proxy
-EOF
-cat /tmp/Proxy_Server >> $SERVER_FILE 2>/dev/null
-if [ -f "/tmp/Proxy_Provider" ]; then
-cat >> "$SERVER_FILE" <<-EOF
-    use:
-EOF
-fi
-cat /tmp/Proxy_Provider >> $SERVER_FILE 2>/dev/null
-config_load "openclash"
-config_foreach yml_other_rules_del "other_rules" "$CONFIG_NAME" "lhie1"
-uci_name_tmp=$(uci -q add openclash other_rules)
-uci_set="uci -q set openclash.$uci_name_tmp."
-${UCI_SET}rule_source="1"
-${uci_set}enable="1"
-${uci_set}rule_name="lhie1"
-${uci_set}config="$CONFIG_NAME"
-${uci_set}GlobalTV="Global TV"
-${uci_set}AsianTV="Asian TV"
-${uci_set}MainlandTV="CN Mainland TV"
-${uci_set}Proxy="Proxy"
-${uci_set}Youtube="Youtube"
-${uci_set}Bilibili="Bilibili"
-${uci_set}Bahamut="Bahamut"
-${uci_set}HBOMax="HBO Max"
-${uci_set}Pornhub="Pornhub"
-${uci_set}Apple="Apple"
-${uci_set}AppleTV="Apple TV"
-${uci_set}GoogleFCM="Google FCM"
-${uci_set}Scholar="Scholar"
-${uci_set}Microsoft="Microsoft"
-${uci_set}AI_Suite="AI Suite"
-${uci_set}Netflix="Netflix"
-${uci_set}Discovery="Discovery Plus"
-${uci_set}DAZN="DAZN"
-${uci_set}Disney="Disney Plus"
-${uci_set}Spotify="Spotify"
-${uci_set}Steam="Steam"
-${uci_set}TikTok="TikTok"
-${uci_set}miHoYo="miHoYo"
-${uci_set}AdBlock="AdBlock"
-${uci_set}HTTPDNS="HTTPDNS"
-${uci_set}Speedtest="Speedtest"
-${uci_set}Telegram="Telegram"
-${uci_set}Crypto="Crypto"
-${uci_set}Discord="Discord"
-${uci_set}PayPal="PayPal"
-${uci_set}Domestic="Domestic"
-${uci_set}Others="Others"
 
-[ "$config_auto_update" -eq 1 ] && [ "$new_servers_group_set" -eq 1 ] && {
-	${UCI_SET}servers_update="1"
-	${UCI_DEL_LIST}="all" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Auto - UrlTest" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Auto - UrlTest" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Proxy" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Proxy" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Youtube" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Youtube" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Bilibili" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Bilibili" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Bahamut" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Bahamut" >/dev/null 2>&1
-	${UCI_DEL_LIST}="HBO Max" >/dev/null 2>&1 && ${UCI_ADD_LIST}="HBO Max" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Pornhub" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Pornhub" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Asian TV" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Asian TV" >/dev/null 2>&1
-    ${UCI_DEL_LIST}="CN Mainland TV" >/dev/null 2>&1 && ${UCI_ADD_LIST}="CN Mainland TV" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Global TV" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Global TV" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Netflix" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Netflix" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Discovery Plus" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Discovery Plus" >/dev/null 2>&1
-	${UCI_DEL_LIST}="DAZN" >/dev/null 2>&1 && ${UCI_ADD_LIST}="DAZN" >/dev/null 2>&1
-    ${UCI_DEL_LIST}="AI Suite" >/dev/null 2>&1 && ${UCI_ADD_LIST}="AI Suite" >/dev/null 2>&1
-    ${UCI_DEL_LIST}="Apple TV" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Apple TV" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Google FCM" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Google FCM" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Scholar" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Scholar" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Disney Plus" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Disney Plus" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Spotify" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Spotify" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Steam" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Steam" >/dev/null 2>&1
-    ${UCI_DEL_LIST}="TikTok" >/dev/null 2>&1 && ${UCI_ADD_LIST}="TikTok" >/dev/null 2>&1
-    ${UCI_DEL_LIST}="miHoYo" >/dev/null 2>&1 && ${UCI_ADD_LIST}="miHoYo" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Telegram" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Telegram" >/dev/null 2>&1
-    ${UCI_DEL_LIST}="Crypto" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Crypto" >/dev/null 2>&1
-    ${UCI_DEL_LIST}="Discord" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Discord" >/dev/null 2>&1
-	${UCI_DEL_LIST}="PayPal" >/dev/null 2>&1 && ${UCI_ADD_LIST}="PayPal" >/dev/null 2>&1
-	${UCI_DEL_LIST}="Speedtest" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Speedtest" >/dev/null 2>&1
-    ${UCI_DEL_LIST}="Others" >/dev/null 2>&1 && ${UCI_ADD_LIST}="Others" >/dev/null 2>&1
-}
+LOG_OUT "Proxies, Proxy-providers, Groups Edited Successful, Updating Config File【$CONFIG_NAME】..."
+config_hash=$(ruby -ryaml -rYAML -I "/usr/share/openclash" -E UTF-8 -e "Value = YAML.load_file('$CONFIG_FILE'); puts Value" 2>/dev/null)
+if [ "$config_hash" != "false" ] && [ -n "$config_hash" ]; then
+    ruby_cover "$CONFIG_FILE" "['proxies']" "$SERVER_FILE" "proxies"
+    ruby_cover "$CONFIG_FILE" "['proxy-providers']" "$PROXY_PROVIDER_FILE" "proxy-providers"
+    ruby_cover "$CONFIG_FILE" "['proxy-groups']" "/tmp/yaml_groups.yaml" "proxy-groups"
+else
+    cat "$SERVER_FILE" "$PROXY_PROVIDER_FILE" "/tmp/yaml_groups.yaml" > "$CONFIG_FILE" 2>/dev/null
 fi
 
-if [ "$create_config" != "0" ] && [ "$servers_if_update" != "1" ] && [ -z "$if_game_proxy" ]; then
-   echo "rules:" >>$SERVER_FILE
-   LOG_OUT "Config File【$CONFIG_NAME】Created Successful, Updating Proxies, Proxy-providers, Groups..."
-   cat "$PROXY_PROVIDER_FILE" > "$CONFIG_FILE" 2>/dev/null
-   cat "$SERVER_FILE" >> "$CONFIG_FILE" 2>/dev/null
-   /usr/share/openclash/yml_groups_get.sh >/dev/null 2>&1
-elif [ -z "$if_game_proxy" ]; then
-   LOG_OUT "Proxies, Proxy-providers, Groups Edited Successful, Updating Config File【$CONFIG_NAME】..."
-   config_hash=$(ruby -ryaml -rYAML -I "/usr/share/openclash" -E UTF-8 -e "Value = YAML.load_file('$CONFIG_FILE'); puts Value" 2>/dev/null)
-   if [ "$config_hash" != "false" ] && [ -n "$config_hash" ]; then
-      ruby_cover "$CONFIG_FILE" "['proxies']" "$SERVER_FILE" "proxies"
-      ruby_cover "$CONFIG_FILE" "['proxy-providers']" "$PROXY_PROVIDER_FILE" "proxy-providers"
-      ruby_cover "$CONFIG_FILE" "['proxy-groups']" "/tmp/yaml_groups.yaml" "proxy-groups"
-   else
-      cat "$SERVER_FILE" "$PROXY_PROVIDER_FILE" "/tmp/yaml_groups.yaml" > "$CONFIG_FILE" 2>/dev/null
-   fi
-fi
-
-if [ -z "$if_game_proxy" ]; then
-   rm -rf $SERVER_FILE 2>/dev/null
-   rm -rf $PROXY_PROVIDER_FILE 2>/dev/null
-   rm -rf /tmp/yaml_groups.yaml 2>/dev/null
-   LOG_OUT "Config File【$CONFIG_NAME】Write Successful!"
-   SLOG_CLEAN
-fi
+rm -rf $SERVER_FILE 2>/dev/null
+rm -rf $PROXY_PROVIDER_FILE 2>/dev/null
+rm -rf /tmp/yaml_groups.yaml 2>/dev/null
 rm -rf /tmp/Proxy_Server 2>/dev/null
 rm -rf /tmp/Proxy_Provider 2>/dev/null
+
+LOG_OUT "Config File【$CONFIG_NAME】Write Successful!"
+SLOG_CLEAN
 del_lock
-${UCI_SET}enable=1 2>/dev/null
-[ "$(uci_get_config "servers_if_update")" == "0" ] && [ -z "$if_game_proxy" ] && /etc/init.d/openclash restart >/dev/null 2>&1
-${UCI_SET}servers_if_update=0
-uci -q commit openclash

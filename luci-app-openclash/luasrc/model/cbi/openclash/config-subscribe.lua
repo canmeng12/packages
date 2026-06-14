@@ -11,7 +11,7 @@ local uci = require "luci.model.uci".cursor()
 
 -- 优化 CBI UI（新版 LuCI 专用）
 local function optimize_cbi_ui()
-	luci.http.write([[
+	HTTP.write([[
 		<script type="text/javascript">
 			// 修正上移、下移按钮名称
 			document.querySelectorAll("input.btn.cbi-button.cbi-button-up").forEach(function(btn) {
@@ -90,11 +90,11 @@ s.anonymous = true
 s.addremove = true
 s.sortable = true
 s.template = "cbi/tblsection"
-s.extedit = luci.dispatcher.build_url("admin/services/openclash/config-subscribe-edit/%s")
+s.extedit = DISP.build_url("admin/services/openclash/config-subscribe-edit/%s")
 function s.create(...)
 	local sid = TypedSection.create(...)
 	if sid then
-		luci.http.redirect(s.extedit % sid)
+		HTTP.redirect(s.extedit % sid)
 		return
 	end
 end
@@ -123,6 +123,14 @@ end
 o = s:option(TextValue, "address", translate("Subscribe Address"))
 function o.cfgvalue(...)
 	return Value.cfgvalue(...) or translate("None")
+	
+end
+function o.validate(self, value)
+	if value then
+		value = value:gsub("\r\n?", "\n")
+		value = value:gsub("%c*$", "")
+	end
+	return value
 end
 
 ---- template
@@ -149,7 +157,6 @@ o = a:option(Button, "Commit", " ")
 o.inputtitle = translate("Commit Settings")
 o.inputstyle = "apply"
 o.write = function()
-	fs.unlink("/tmp/Proxy_Group")
 	m.uci:commit("openclash")
 end
 
@@ -157,7 +164,6 @@ o = a:option(Button, "Apply", " ")
 o.inputtitle = translate("Update Config")
 o.inputstyle = "apply"
 o.write = function()
-	fs.unlink("/tmp/Proxy_Group")
 	m.uci:set("openclash", "config", "enable", 1)
 	m.uci:commit("openclash")
 	SYS.call("/usr/share/openclash/openclash.sh >/dev/null 2>&1 &")

@@ -5,7 +5,10 @@ local uci = luci.model.uci.cursor()
 local fs = require "luci.openclash"
 local sys = require "luci.sys"
 local json = require "luci.jsonc"
+local HTTP = require "luci.http"
+local DISP = require "luci.dispatcher"
 local sid = arg[1]
+local age_section
 
 font_red = [[<b style=color:red>]]
 font_off = [[</b>]]
@@ -17,16 +20,14 @@ m = Map(openclash, translate("Config Subscribe Edit"))
 m.pageaction = false
 m.description=translate("Convert Subscribe function of Online is Supported By subconverter Written By tindy X") ..
 "<br/>"..
-"<br/>"..translate("API By tindy X & lhie1")..
-"<br/>"..
 "<br/>"..translate("Subconverter external configuration (subscription conversion template) Description: https://github.com/tindy2013/subconverter#external-configuration-file")..
 "<br/>"..
 "<br/>"..translate("If you need to customize the external configuration file (subscription conversion template), please write it according to the instructions, upload it to the accessible location of the external network, and fill in the address correctly when using it")..
 "<br/>"..
 "<br/>"..translate("If you have a recommended external configuration file (subscription conversion template), you can modify by following The file format of /usr/share/openclash/res/sub_ini.list and pr")
-m.redirect = luci.dispatcher.build_url("admin/services/openclash/config-subscribe")
+m.redirect = DISP.build_url("admin/services/openclash/config-subscribe")
 if m.uci:get(openclash, sid) ~= "config_subscribe" then
-	luci.http.redirect(m.redirect)
+	HTTP.redirect(m.redirect)
 	return
 end
 
@@ -57,40 +58,136 @@ function o.validate(self, value)
 	return value
 end
 
-local sub_path = "/tmp/dler_sub"
-local info, token, get_sub, sub_info
-local token = fs.uci_get_config("config", "dler_token")
-if token then
-	get_sub = string.format("curl -sL -H 'Content-Type: application/json' --connect-timeout 2 -d '{\"access_token\":\"%s\"}' -X POST https://dler.cloud/api/v1/managed/clash -o %s", token, sub_path)
-	if not nixio.fs.access(sub_path) then
-		luci.sys.exec(get_sub)
-	else
-		if fs.readfile(sub_path) == "" or not fs.readfile(sub_path) then
-			luci.sys.exec(get_sub)
-		end
-	end
-	sub_info = fs.readfile(sub_path)
-	if sub_info then
-		sub_info = json.parse(sub_info)
-	end
-	if sub_info and sub_info.ret == 200 then
-		o:value(sub_info.smart)
-		o:value(sub_info.ss)
-		o:value(sub_info.vmess)
-		o:value(sub_info.trojan)
-	else
-		fs.unlink(sub_path)
-	end
-end
-
 ---- UA
 o = s:option(Value, "sub_ua", "User-Agent")
-o.description = font_red..bold_on..translate("Used for Downloading Subscriptions, Defaults to Clash")..bold_off..font_off
-o:value("clash.meta")
-o:value("clash-verge/v1.5.1")
+o.default = "clash-verge/v2.4.5"
+o.description = font_red..bold_on..translate("Used for Downloading Subscriptions, Defaults to").." "..o.default..bold_off..font_off
+o:value("clash-verge/v2.4.5")
+o:value("clash.meta/1.19.20")
 o:value("Clash")
-o.default = "clash.meta"
 o.rmempty = true
+
+o = s:option(ListValue, "config_age_algo", translate("Age Key Type"))
+o.description = font_red..bold_on..translate("Age Encryption For Config, Click For More:")..bold_off..font_off.." ".."<a href='javascript:void(0)' onclick='javascript:return winOpen(\"https://wiki.metacubex.one/config/proxy-providers/?age-secret-key#age-secret-key\")'>"..translate("Age Encryption Introduce").."</a>"
+o:value("keygen", "x25519")
+o:value("pq", "PQ (mlkem768-x25519)")
+o.rmempty = true
+function o.cfgvalue(self, section)
+	local name = m.uci:get(openclash, section, "name") or section
+	local v = ""
+	m.uci:foreach(openclash, "config_age_secret", function(s)
+		if s.name == name then
+			v = s.algo or ""
+			age_section = s['.name']
+			return false
+		end
+	end)
+	return v
+end
+function o.write(self, section, value)
+	local name = m.uci:get(openclash, section, "name") or section
+	m.uci:foreach(openclash, "config_age_secret", function(s)
+		if s.name == name then
+			age_section = s['.name']
+			return false
+		end
+	end)
+	if not age_section and value and value ~= "" then
+		age_section = m.uci:add(openclash, "config_age_secret")
+		if age_section then m.uci:set(openclash, age_section, "name", name) end
+	end
+	if age_section then
+		if value and value ~= "" then
+			m.uci:set(openclash, age_section, "algo", value)
+		else
+			m.uci:delete(openclash, age_section, "algo")
+		end
+	end
+end
+function o.remove(self, section)
+	self:write(section, "")
+end
+
+o = s:option(Value, "config_age_secret", translate("Secret Key"))
+o.rmempty = true
+o.placeholder = "AGE-SECRET-KEY-..."
+function o.cfgvalue(self, section)
+	local name = m.uci:get(openclash, section, "name") or section
+	local v = ""
+	m.uci:foreach(openclash, "config_age_secret", function(s)
+		if s.name == name then
+			v = s.secret or ""
+			age_section = s['.name']
+			return false
+		end
+	end)
+	return v
+end
+function o.write(self, section, value)
+	local name = m.uci:get(openclash, section, "name") or section
+	m.uci:foreach(openclash, "config_age_secret", function(s)
+		if s.name == name then
+			age_section = s['.name']
+			return false
+		end
+	end)
+	if not age_section and value and value ~= "" then
+		age_section = m.uci:add(openclash, "config_age_secret")
+		if age_section then m.uci:set(openclash, age_section, "name", name) end
+	end
+	if age_section then
+		if value and value ~= "" then
+			m.uci:set(openclash, age_section, "secret", value)
+		else
+			m.uci:delete(openclash, age_section, "secret")
+		end
+	end
+end
+function o.remove(self, section)
+	self:write(section, "")
+end
+
+o = s:option(Value, "config_age_public", translate("Public Key"))
+o.rmempty = true
+o.placeholder = "age..."
+function o.cfgvalue(self, section)
+	local name = m.uci:get(openclash, section, "name") or section
+	local v = ""
+	m.uci:foreach(openclash, "config_age_secret", function(s)
+		if s.name == name then
+			v = s.public or ""
+			age_section = s['.name']
+			return false
+		end
+	end)
+	return v
+end
+function o.write(self, section, value)
+	local name = m.uci:get(openclash, section, "name") or section
+	m.uci:foreach(openclash, "config_age_secret", function(s)
+		if s.name == name then
+			age_section = s['.name']
+			return false
+		end
+	end)
+	if not age_section and value and value ~= "" then
+		age_section = m.uci:add(openclash, "config_age_secret")
+		if age_section then m.uci:set(openclash, age_section, "name", name) end
+	end
+	if age_section then
+		if value and value ~= "" then
+			m.uci:set(openclash, age_section, "public", value)
+		else
+			m.uci:delete(openclash, age_section, "public")
+		end
+	end
+end
+function o.remove(self, section)
+	self:write(section, "")
+end
+
+o = s:option(DummyValue, "_generate_age_btn", "")
+o.template = "openclash/generate_age"
 
 ---- subconverter
 o = s:option(Flag, "sub_convert", translate("Subscribe Convert Online"))
@@ -102,11 +199,10 @@ o = s:option(Value, "convert_address", translate("Convert Address"))
 o.rmempty = true
 o.description = font_red..bold_on..translate("Note: There is A Risk of Privacy Leakage in Online Convert")..bold_off..font_off
 o:depends("sub_convert", "1")
-o:value("https://api.dler.io/sub", translate("api.dler.io")..translate("(Default)"))
-o:value("https://api.wcc.best/sub", translate("api.wcc.best"))
 o:value("https://api.asailor.org/sub", translate("api.asailor.org"))
-o.default = "https://api.dler.io/sub"
-o.placeholder = "https://api.dler.io/sub"
+o:value("https://api.wcc.best/sub", translate("api.wcc.best"))
+o.default = "https://api.asailor.org/sub"
+o.placeholder = "https://api.asailor.org/sub"
 
 ---- Template
 o = s:option(ListValue, "template", translate("Template Name"))
@@ -196,10 +292,10 @@ o.rmempty = true
 ---- de_exkey
 o = s:option(MultiValue, "de_ex_keyword", font_red..bold_on..translate("Exclude Keyword Match Default")..bold_off..font_off)
 o.rmempty = true
-o:value("过期时间")
-o:value("剩余流量")
-o:value("TG群")
-o:value("官网")
+o:value(translate("Expire"))
+o:value(translate("Traffic"))
+o:value(translate("Plan"))
+o:value(translate("Official"))
 
 local t = {
 	{Commit, Back}
@@ -210,8 +306,19 @@ o = a:option(Button,"Commit", " ")
 o.inputtitle = translate("Commit Settings")
 o.inputstyle = "apply"
 o.write = function()
+	local to_delete = {}
+	m.uci:foreach(openclash, "config_age_secret", function(s)
+		local pub = m.uci:get(openclash, s['.name'], "public") or ""
+		local sec = m.uci:get(openclash, s['.name'], "secret") or ""
+		if (pub == "" or pub == nil) and (sec == "" or sec == nil) then
+			table.insert(to_delete, s['.name'])
+		end
+	end)
+	for _, n in ipairs(to_delete) do
+		m.uci:delete(openclash, n)
+	end
 	m.uci:commit(openclash)
-	luci.http.redirect(m.redirect)
+	HTTP.redirect(m.redirect)
 end
 
 o = a:option(Button,"Back", " ")
@@ -219,7 +326,8 @@ o.inputtitle = translate("Back Settings")
 o.inputstyle = "reset"
 o.write = function()
 	m.uci:revert(openclash, sid)
-	luci.http.redirect(m.redirect)
+	m.uci:revert(openclash, age_section)
+	HTTP.redirect(m.redirect)
 end
 
 m:append(Template("openclash/toolbar_show"))
