@@ -77,7 +77,7 @@ endchoice
 
 choice
 	prompt "Shadowsocks Client Selection"
-	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_NONE_Client
+	default PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Client
 
 	config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_NONE_Client
 	bool "None"
@@ -96,6 +96,8 @@ choice
 	config PACKAGE_$(PKG_NAME)_INCLUDE_Shadowsocks_Rust_Server
 	bool "Shadowsocks Rust"
 endchoice
+
+menu "Configuration"
 
 choice
 	prompt "V2ray-core Selection"
@@ -168,6 +170,7 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_ShadowsocksR_Libev_Server
 	bool "Include ShadowsocksR Libev Server"
 	default n
 
+endmenu
 endef
 
 

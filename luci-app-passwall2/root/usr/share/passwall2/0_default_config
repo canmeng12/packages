@@ -31,7 +31,7 @@ config global_forwarding
 	option udp_redir_ports '1:65535'
 	option accept_icmp '0'
 	option prefer_nft '1'
-	option tcp_proxy_way 'redirect'
+	option tcp_proxy_way 'tproxy'
 	option ipv6_tproxy '0'
 
 config global_xray

@@ -44,11 +44,11 @@ case "$DISTRIB_TARGET" in
 	"rockchip/armv8")
 		case "$SOC" in
 		"rockchip,rk3328")
-			uci_write_config 0 schedutil 816000 1512000
+			uci_write_config 0 schedutil 816000 1608000
 			;;
 		"rockchip,rk3399")
-			uci_write_config 0 schedutil 600000 1608000
-			uci_write_config 4 schedutil 600000 2016000
+			uci_write_config 0 schedutil 600000 1800000
+			uci_write_config 4 schedutil 600000 2208000
 			;;
 		"rockchip,rk3566"|\
 		"rockchip,rk3568")
