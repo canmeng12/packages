@@ -1,12 +1,18 @@
 local m, s = ...
 
-local api = require "luci.passwall.api"
-
 if not api.is_finded("ssserver") then
 	return
 end
 
 local type_name = "SS-Rust"
+
+-- [[ Shadowsocks Rust ]]
+
+s.fields["type"]:value(type_name, translate("Shadowsocks Rust"))
+
+if s.val["type"] and s.val["type"] ~= type_name then
+	return
+end
 
 local option_prefix = "ssrust_"
 
@@ -19,10 +25,6 @@ local ssrust_encrypt_method_list = {
 	"aes-128-gcm", "aes-256-gcm", "chacha20-ietf-poly1305",
 	"2022-blake3-aes-128-gcm", "2022-blake3-aes-256-gcm", "2022-blake3-chacha20-poly1305"
 }
-
--- [[ Shadowsocks Rust ]]
-
-s.fields["type"]:value(type_name, translate("Shadowsocks Rust"))
 
 o = s:option(Flag, _n("custom"), translate("Use Custom Config"))
 
@@ -55,7 +57,7 @@ o.validate = function(self, value, t)
 	if value and api.jsonc.parse(value) then
 		return value
 	else
-		return nil, translate("Must be JSON text!")
+		return nil, translate("Custom Config") .. " " .. translate("Must be JSON text!")
 	end
 end
 o.custom_cfgvalue = function(self, section, value)
@@ -65,7 +67,7 @@ o.custom_cfgvalue = function(self, section, value)
 	end
 end
 o.custom_write = function(self, section, value)
-	m:set(section, "config_str", api.base64Encode(value))
+	m:set(section, "config_str", api.base64Encode(value) or "")
 end
 
 o = s:option(Flag, _n("log"), translate("Log"))

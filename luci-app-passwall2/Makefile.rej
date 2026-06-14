@@ -44,17 +44,3 @@
  
  config PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client
  	bool "Include tuic-client"
-@@ -140,7 +141,12 @@ config PACKAGE_$(PKG_NAME)_INCLUDE_tuic_client
- config PACKAGE_$(PKG_NAME)_INCLUDE_V2ray_Plugin
- 	bool "Include V2ray-Plugin (Shadowsocks Plugin)"
- 	select PACKAGE_v2ray-plugin
--	default y if aarch64||arm||i386||x86_64
-+	default n
-+
-+config PACKAGE_$(PKG_NAME)_INCLUDE_Xray
-+	bool "Include Xray"
-+	select PACKAGE_Xray
-+	default y
- 
- endif
- endmenu

@@ -16,9 +16,7 @@ end
 
 m:append(Template(appname .. "/cbi/nodes_listvalue_com"))
 
-local has_ss = api.is_finded("ss-redir")
 local has_ss_rust = api.is_finded("sslocal")
-local has_trojan_plus = api.is_finded("trojan-plus")
 local has_singbox = api.finded_com("sing-box")
 local has_xray = api.finded_com("xray")
 local has_hysteria2 = api.finded_com("hysteria")
@@ -28,17 +26,9 @@ local vmess_type = {}
 local vless_type = {}
 local hysteria2_type = {}
 local xray_version = api.get_app_version("xray")
-if has_ss then
-	local s = "shadowsocks-libev"
-	table.insert(ss_type, s)
-end
 if has_ss_rust then
 	local s = "shadowsocks-rust"
 	table.insert(ss_type, s)
-end
-if has_trojan_plus then
-	local s = "trojan-plus"
-	table.insert(trojan_type, s)
 end
 if has_singbox then
 	local s = "sing-box"
@@ -106,6 +96,18 @@ o.write = function(self, section, value)
 			if e["group"] and e["group"]:lower() == old:lower() then
 				m.uci:set(appname, e[".name"], "group", value)
 			end
+			if e["protocol"] and (e["protocol"] == "_balancing" or e["protocol"] == "_urltest") and e["node_group"] then
+				local gs = ""
+				for g in e["node_group"]:gmatch("%S+") do
+					if api.UrlEncode(old) == g then
+						gs = gs .. " " .. api.UrlEncode(value)
+					else
+						gs = gs .. " " .. g
+					end
+				end
+				gs = api.trim(gs)
+				m.uci:set(appname, e[".name"], "node_group", gs)
+			end
 		end)
 	end
 	return Value.write(self, section, value)
@@ -121,9 +123,36 @@ o.validate = function(self, value)
 	return value:gsub("%s+", ""):gsub("%z", "")
 end
 
-o = s:option(Flag, "allowInsecure", translate("allowInsecure"), translate("Whether unsafe connections are allowed. When checked, Certificate validation will be skipped."))
-o.default = "0"
-o.rmempty = false
+o = s:option(ListValue, "domain_resolver", translate("Domain DNS Resolve"))
+o.description = translate("If the node address is a domain name, this DNS will be used for resolution.") .. "<br>" ..
+		translate("Supports only Xray or Sing-box node types.") .. "<br>" .. string.format('<font color="red">%s</font>',
+		translate("Note: For node-specific DNS only. Keep Auto to avoid extra overhead."))
+o:value("", translate("Auto"))
+o:value("tcp", "TCP")
+o:value("udp", "UDP")
+o:value("https", "DoH")
+
+o = s:option(Value, "domain_resolver_dns", "DNS")
+o.datatype = "or(ipaddr,ipaddrport)"
+o:value("114.114.114.114")
+o:value("223.5.5.5:53")
+o.default = o.keylist[1]
+o:depends({ domain_resolver = "tcp" })
+o:depends({ domain_resolver = "udp" })
+
+o = s:option(Value, "domain_resolver_dns_https", "DNS")
+o:value("https://120.53.53.53/dns-query", "DNSPod")
+o:value("https://223.5.5.5/dns-query", "AliDNS")
+o.default = o.keylist[1]
+o:depends({ domain_resolver = "https" })
+
+o = s:option(ListValue, "domain_strategy", translate("Domain Strategy"), translate("If is domain name, The requested domain name will be resolved to IP before connect."))
+o.default = ""
+o:value("", translate("Auto"))
+o:value("UseIPv4v6", translate("Prefer IPv4"))
+o:value("UseIPv6v4", translate("Prefer IPv6"))
+o:value("UseIPv4", translate("IPv4 Only"))
+o:value("UseIPv6", translate("IPv6 Only"))
 
 o = s:option(ListValue, "filter_keyword_mode", translate("Filter keyword Mode"))
 o.default = "5"
@@ -187,16 +216,18 @@ if #hysteria2_type > 0 then
 	for key, value in pairs(hysteria2_type) do
 		o:value(value)
 	end
+
+	o = s:option(Value, "hysteria_up_mbps", "Hy/Hy2 " .. translate("Max upload Mbps"))
+	o.datatype = "uinteger"
+	o.default = "100"
+
+	o = s:option(Value, "hysteria_down_mbps", "Hy/Hy2 " .. translate("Max download Mbps"))
+	o.datatype = "uinteger"
+	o.default = "100"
 end
 
-o = s:option(ListValue, "domain_strategy", "Sing-box " .. translate("Domain Strategy"), translate("Set the default domain resolution strategy for the sing-box node."))
-o.default = "global"
-o:value("global", translate("Use global config"))
-o:value("", translate("Auto"))
-o:value("prefer_ipv4", translate("Prefer IPv4"))
-o:value("prefer_ipv6", translate("Prefer IPv6"))
-o:value("ipv4_only", translate("IPv4 Only"))
-o:value("ipv6_only", translate("IPv6 Only"))
+o = s:option(Flag, "boot_update", translate("Update Once on Boot"), translate("Updates the subscription the first time PassWall runs automatically after each system boot."))
+o.default = 0
 
 ---- Enable auto update subscribe
 o = s:option(Flag, "auto_update", translate("Enable auto update subscribe"))
@@ -249,6 +280,8 @@ o = s:option(Value, "user_agent", translate("User-Agent"))
 o.default = "passwall"
 o:value("passwall", "PassWall")
 o:value("v2rayN/9.99", "v2rayN")
+o:value("clash.meta", "Clash.Meta")
+o:value("Clash", "Clash")
 o:value("curl", "Curl")
 o:value("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0", "Edge for Linux")
 o:value("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0", "Edge for Windows")
@@ -257,9 +290,9 @@ o = s:option(ListValue, "chain_proxy", translate("Chain Proxy"))
 o:value("", translate("Close(Not use)"))
 o:value("1", translate("Preproxy Node"))
 o:value("2", translate("Landing Node"))
+o:value("3", translate("Outbound Interface"))
 
 local descrStr = "Chained proxy works only with Xray or Sing-box nodes.<br>"
-descrStr = descrStr .. "The chained node must be the same type as your subscription node (Xray with Xray, Sing-box with Sing-box).<br>"
 descrStr = descrStr .. "You can only use manual or imported nodes as chained nodes."
 descrStr = translate(descrStr) .. "<br>" .. translate("Only support a layer of proxy.")
 
@@ -274,6 +307,14 @@ o2:depends({ ["chain_proxy"] = "2" })
 o2.description = descrStr
 o2.template = appname .. "/cbi/nodes_listvalue"
 o2.group = {}
+
+o3 = s:option(Value, "outbound_iface", translate("Outbound Interface"))
+o3:depends({ ["chain_proxy"] = "3" })
+o3:value("", translate("All"))
+local iface = api.get_network_devices()
+for _, d in ipairs(iface) do
+	o3:value(d.name, d.label)
+end
 
 for k, v in pairs(nodes_table) do
 	if (v.type == "Xray" or v.type == "sing-box") and (not v.chain_proxy or v.chain_proxy == "") and v.add_mode ~= "2" then
