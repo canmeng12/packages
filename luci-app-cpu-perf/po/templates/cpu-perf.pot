@@ -1,19 +1,25 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
+msgid "Active-State Power Management (ASPM) policy for PCIe links, which saves power by putting unused PCIe links into a low-power state."
+msgstr ""
+
 msgid "An error has occurred"
 msgstr ""
 
 msgid "CPU"
 msgstr ""
 
+msgid "CPU Frequency"
+msgstr ""
+
 msgid "CPU Performance"
 msgstr ""
 
-msgid "CPU performance information and management."
+msgid "CPU performance management."
 msgstr ""
 
-msgid "CPU performance scaling not available..."
+msgid "CPU performance scaling is not available..."
 msgstr ""
 
 msgid "Command failed"
@@ -22,10 +28,10 @@ msgstr ""
 msgid "Conservative governor"
 msgstr ""
 
-msgid "Conservative tunables"
+msgid "Current frequency"
 msgstr ""
 
-msgid "Current frequency"
+msgid "Current values"
 msgstr ""
 
 msgid "Disabled"
@@ -35,6 +41,9 @@ msgid "Enable"
 msgstr ""
 
 msgid "Enabled"
+msgstr ""
+
+msgid "Enable/disable Energy Aware Scheduling (EAS)."
 msgstr ""
 
 msgid "Failed to get %s init status: %s"
@@ -82,19 +91,25 @@ msgstr ""
 msgid "Minimum scaling frequency"
 msgstr ""
 
+msgid "No CPU frequency data available..."
+msgstr ""
+
 msgid "No performance data..."
 msgstr ""
 
 msgid "Ondemand governor"
 msgstr ""
 
-msgid "Ondemand tunables"
-msgstr ""
-
 msgid "Performance managment"
 msgstr ""
 
-msgid "Performance scaling not available for this CPU..."
+msgid "Performance scaling is not available for this policy..."
+msgstr ""
+
+msgid "Policy"
+msgstr ""
+
+msgid "Reduction factor to apply to the original frequency target of the governor."
 msgstr ""
 
 msgid "Run at startup"

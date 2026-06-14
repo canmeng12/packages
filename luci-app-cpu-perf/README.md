@@ -1,28 +1,43 @@
 # luci-app-cpu-perf
-CPU performance information and management for LuCI (OpenWrt webUI).
+CPU performance management for LuCI (OpenWrt webUI).
 
-OpenWrt >= 19.07.5.
+OpenWrt >= 22.03.
 
-**Dependences:** lua, luci-lib-nixio, luci-lib-jsonc.
+**Dependences:** ucode, ucode-mod-fs.
 
 ## Installation notes
 
-**OpenWrt >= 19.07.5:**
+**OpenWrt >= 25.12:**
 
-    wget --no-check-certificate -O /tmp/luci-app-cpu-perf_0.4-0_all.ipk https://github.com/gSpotx2f/packages-openwrt/raw/master/current/luci-app-cpu-perf_0.4-0_all.ipk
-    opkg install /tmp/luci-app-cpu-perf_0.4-0_all.ipk
-    rm /tmp/luci-app-cpu-perf_0.4-0_all.ipk
-    /etc/init.d/rpcd restart
-    /etc/init.d/cpu-perf start
+    wget --no-check-certificate -O /tmp/luci-app-cpu-perf-0.6.2-r1.apk https://github.com/gSpotx2f/packages-openwrt/raw/master/25.12/luci-app-cpu-perf-0.6.2-r1.apk
+    apk --allow-untrusted add /tmp/luci-app-cpu-perf-0.6.2-r1.apk
+    rm /tmp/luci-app-cpu-perf-0.6.2-r1.apk
+    service rpcd restart
+    service cpu-perf start
 
 i18n-ru:
 
-    wget --no-check-certificate -O /tmp/luci-i18n-cpu-perf-ru_0.4-0_all.ipk https://github.com/gSpotx2f/packages-openwrt/raw/master/current/luci-i18n-cpu-perf-ru_0.4-0_all.ipk
-    opkg install /tmp/luci-i18n-cpu-perf-ru_0.4-0_all.ipk
-    rm /tmp/luci-i18n-cpu-perf-ru_0.4-0_all.ipk
+    wget --no-check-certificate -O /tmp/luci-i18n-cpu-perf-ru-0.6.2-r1.apk https://github.com/gSpotx2f/packages-openwrt/raw/master/25.12/luci-i18n-cpu-perf-ru-0.6.2-r1.apk
+    apk --allow-untrusted add /tmp/luci-i18n-cpu-perf-ru-0.6.2-r1.apk
+    rm /tmp/luci-i18n-cpu-perf-ru-0.6.2-r1.apk
+
+**OpenWrt <= 24.10:**
+
+    wget --no-check-certificate -O /tmp/luci-app-cpu-perf_0.6.2-r1_all.ipk https://github.com/gSpotx2f/packages-openwrt/raw/master/24.10/luci-app-cpu-perf_0.6.2-r1_all.ipk
+    opkg install /tmp/luci-app-cpu-perf_0.6.2-r1_all.ipk
+    rm /tmp/luci-app-cpu-perf_0.6.2-r1_all.ipk
+    service rpcd restart
+    service cpu-perf start
+
+i18n-ru:
+
+    wget --no-check-certificate -O /tmp/luci-i18n-cpu-perf-ru_0.6.2-r1_all.ipk https://github.com/gSpotx2f/packages-openwrt/raw/master/24.10/luci-i18n-cpu-perf-ru_0.6.2-r1_all.ipk
+    opkg install /tmp/luci-i18n-cpu-perf-ru_0.6.2-r1_all.ipk
+    rm /tmp/luci-i18n-cpu-perf-ru_0.6.2-r1_all.ipk
 
 ## Screenshots:
 
+![](https://github.com/gSpotx2f/luci-app-cpu-perf/blob/master/screenshots/00.jpg)
 ![](https://github.com/gSpotx2f/luci-app-cpu-perf/blob/master/screenshots/01.jpg)
 ![](https://github.com/gSpotx2f/luci-app-cpu-perf/blob/master/screenshots/02.jpg)
 

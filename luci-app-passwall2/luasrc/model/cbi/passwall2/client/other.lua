@@ -150,6 +150,9 @@ o = s:option(Flag, "accept_icmpv6", translate("Hijacking ICMPv6 (IPv6 PING)"))
 o:depends("ipv6_tproxy", true)
 o.default = 0
 
+o = s:option(DynamicList, "force_proxy_lan_ip", translate("Force Proxy LAN IP"), translate("By default, commonly used internal network IP ranges will be connect directly (not entering the core). If you want a certain network range to go through a proxy, please add it here."))
+o.datatype = "or(ipmask4,ipmask6)"
+
 if has_xray then
 	s_xray = m:section(TypedSection, "global_xray", "Xray " .. translate("Settings"))
 	s_xray.anonymous = true
@@ -168,14 +171,17 @@ if has_xray then
 	o:depends("fragment", true)
 
 	o = s_xray:option(Value, "fragment_length", translate("Fragment Length"), translate("Fragmented packet length (byte)"))
+	o.datatype = "or(uinteger,portrange)"
 	o.default = "100-200"
 	o:depends("fragment", true)
 
-	o = s_xray:option(Value, "fragment_interval", translate("Fragment Interval"), translate("Fragmentation interval (ms)"))
+	o = s_xray:option(Value, "fragment_delay", translate("Fragment Delay"), translate("Fragmentation interval (ms)"))
+	o.datatype = "or(uinteger,portrange)"
 	o.default = "10-20"
 	o:depends("fragment", true)
 
 	o = s_xray:option(Value, "fragment_maxSplit", translate("Max Split"), translate("Limit the maximum number of splits."))
+	o.datatype = "or(uinteger,portrange)"
 	o.default = "100-200"
 	o:depends("fragment", true)
 
@@ -225,46 +231,32 @@ if has_xray then
 
 	o = s_xray_noise:option(ListValue, "type", translate("Type"))
 	o:value("rand", "rand")
+	o:value("array", "array")
 	o:value("str", "str")
 	o:value("hex", "hex")
 	o:value("base64", "base64")
 
-	o = s_xray_noise:option(Value, "packet", translate("Packet"))
+	o = s_xray_noise:option(Value, "packet", translate("Packet | Rand Length"))
 	o.datatype = "minlength(1)"
 	o.rmempty = false
 
 	o = s_xray_noise:option(Value, "delay", translate("Delay (ms)"))
 	o.datatype = "or(uinteger,portrange)"
 	o.rmempty = false
-
-	o = s_xray_noise:option(ListValue, "applyTo", translate("IP Type"))
-	o:value("ip", "ALL")
-	o:value("ipv4", "IPv4")
-	o:value("ipv6", "IPv6")
 end
 
 if has_singbox then
-	local version = api.get_app_version("sing-box"):match("[^v]+")
-	local version_ge_1_12_0 = api.compare_versions(version, ">=", "1.12.0")
-
 	s = m:section(TypedSection, "global_singbox", "Sing-Box " .. translate("Settings"))
 	s.anonymous = true
 	s.addremove = false
 
-	o = s:option(Flag, "sniff_override_destination", translate("Override the connection destination address"))
+	o = s:option(Flag, "record_fragment", "TLS Record " .. translate("Fragment"),
+		translate("Split handshake data into multiple TLS records for better censorship evasion. Low overhead. Recommended to enable first."))
 	o.default = 0
-	o.rmempty = false
-	o.description = translate("Override the connection destination address with the sniffed domain.<br />When enabled, traffic will match only by domain, ignoring IP rules.<br />If using shunt nodes, configure the domain shunt rules correctly.")
 
-	if version_ge_1_12_0 then
-		o = s:option(Flag, "record_fragment", "TLS Record " .. translate("Fragment"),
-			translate("Split handshake data into multiple TLS records for better censorship evasion. Low overhead. Recommended to enable first."))
-		o.default = 0
-
-		o = s:option(Flag, "fragment", "TLS TCP " .. translate("Fragment"),
-			translate("Split handshake into multiple TCP segments. Enhances obfuscation. May increase delay. Use only if needed."))
-		o.default = 0
-	end
+	o = s:option(Flag, "fragment", "TLS TCP " .. translate("Fragment"),
+		translate("Split handshake into multiple TCP segments. Enhances obfuscation. May increase delay. Use only if needed."))
+	o.default = 0
 end
 
 return m

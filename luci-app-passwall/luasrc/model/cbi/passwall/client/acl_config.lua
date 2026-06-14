@@ -81,10 +81,18 @@ o = s:option(Value, "remarks", translate("Remarks"))
 o.default = arg[1]
 o.rmempty = false
 
-o = s:option(ListValue, "interface", translate("Source Interface"))
+o = s:option(Value, "interface", translate("Source Interface"))
 o:value("", translate("All"))
-local wa = require "luci.tools.webadmin"
-wa.cbi_add_networks(o)
+local iface = api.get_network_devices()
+for _, d in ipairs(iface) do
+	o:value(d.name, d.label)
+end
+o.validate = function(self, value, section)
+	if value == "" or value:match("^[a-zA-Z0-9][a-zA-Z0-9%.%_%-]*$") then
+		return value
+	end
+	return nil, translate("Invalid interface name")
+end
 
 local mac_t = {}
 sys.net.mac_hints(function(e, t)
@@ -209,6 +217,10 @@ o.default = ""
 o:depends({ _hide_node_option = false, use_global_config = false })
 o.template = appname .. "/cbi/nodes_listvalue"
 o.group = {}
+o.remove = function(self, section)
+	m:del(section, self.option)
+	m:del(section, "udp_node")
+end
 
 o = s:option(DummyValue, "_tcp_node_bool", "")
 o.template = "passwall/cbi/hidevalue"
@@ -219,14 +231,36 @@ o = s:option(ListValue, "udp_node", "<a style='color: red'>" .. translate("UDP N
 o.default = ""
 o:value("", translate("Close"))
 o:value("tcp", translate("Same as the tcp node"))
-o:depends({ _tcp_node_bool = "1" })
+o:depends({ _tcp_node_bool = "1", _node_sel_other = "1" })
 o.template = appname .. "/cbi/nodes_listvalue"
 o.group = {"",""}
+o.remove = function(self, section)
+	local v = s.fields["shunt_udp_node"]:formvalue(section)
+	if not v then
+		return m:del(section, self.option)
+	end
+end
+
+o = s:option(ListValue, "shunt_udp_node", "<a style='color: red'>" .. translate("UDP Node") .. "</a>")
+o:value("close", translate("Close"))
+o:value("tcp", translate("Same as the tcp node"))
+o:depends({ _tcp_node_bool = "1", _node_sel_shunt = "1" })
+o.cfgvalue = function(self, section)
+	local v = m:get(section, "udp_node") or ""
+	if v == "" then v = "close" end
+	if v ~= "close" and v ~= "tcp" then v = "tcp" end
+	return v
+end
+o.write = function(self, section, value)
+	if value == "close" then value = "" end
+	return m:set(section, "udp_node", value)
+end
 
 o = s:option(DummyValue, "_udp_node_bool", "")
 o.template = "passwall/cbi/hidevalue"
 o.value = "1"
 o:depends({ udp_node = "",  ['!reverse'] = true })
+o:depends({ shunt_udp_node = "tcp" })
 
 ---- TCP Proxy Drop Ports
 local TCP_PROXY_DROP_PORTS = m:get("@global_forwarding[0]", "tcp_proxy_drop_ports")
@@ -356,6 +390,12 @@ if has_xray then
 	o:value("xray", "Xray")
 end
 o:depends({ _tcp_node_bool = "1", _node_sel_other = "1" })
+o.write = function(self, section, value)
+	if value == "dns2socks" then
+		m:del(section, "v2ray_dns_mode")
+	end
+	return ListValue.write(self, section, value)
+end
 o.remove = function(self, section)
 	local f = s.fields["tcp_node"]
 	local id_val = f and f:formvalue(section) or ""
@@ -380,9 +420,9 @@ end
 
 o = s:option(ListValue, "xray_dns_mode", translate("Request protocol"))
 o.default = "tcp"
-o:value("udp", "UDP")
 o:value("tcp", "TCP")
-o:value("tcp+doh", "TCP + DoH (" .. translate("A/AAAA type") .. ")")
+o:value("udp", "UDP")
+o:value("doh", "DoH")
 o:depends("dns_mode", "xray")
 o.cfgvalue = function(self, section)
 	return m:get(section, "v2ray_dns_mode")
@@ -395,9 +435,10 @@ end
 
 o = s:option(ListValue, "singbox_dns_mode", translate("Request protocol"))
 o.default = "tcp"
-o:value("udp", "UDP")
 o:value("tcp", "TCP")
+o:value("udp", "UDP")
 o:value("doh", "DoH")
+o:value("http3", "HTTP3(DoH3)")
 o:depends("dns_mode", "sing-box")
 o.cfgvalue = function(self, section)
 	return m:get(section, "v2ray_dns_mode")
@@ -422,11 +463,11 @@ o:value("208.67.222.222", "208.67.222.222 (OpenDNS)")
 o:depends({dns_mode = "dns2socks"})
 o:depends({xray_dns_mode = "udp"})
 o:depends({xray_dns_mode = "tcp"})
-o:depends({xray_dns_mode = "tcp+doh"})
 o:depends({singbox_dns_mode = "udp"})
 o:depends({singbox_dns_mode = "tcp"})
 
 o = s:option(Value, "remote_dns_doh", translate("Remote DNS DoH"))
+o.description = translate("Format: URL[,IP] (optional IP to map the domain in the URL)")
 o:value("https://1.1.1.1/dns-query", "1.1.1.1 (CloudFlare)")
 o:value("https://1.1.1.2/dns-query", "1.1.1.2 (CloudFlare-Security)")
 o:value("https://8.8.4.4/dns-query", "8.8.4.4 (Google)")
@@ -437,7 +478,7 @@ o:value("https://208.67.222.222/dns-query", "208.67.222.222 (OpenDNS)")
 o:value("https://dns.adguard.com/dns-query,94.140.14.14", "94.140.14.14 (AdGuard)")
 o:value("https://doh.libredns.gr/dns-query,116.202.176.26", "116.202.176.26 (LibreDNS)")
 o:value("https://doh.libredns.gr/ads,116.202.176.26", "116.202.176.26 (LibreDNS-NoAds)")
-o.default = "https://1.1.1.1/dns-query"
+o.default = o.keylist[1]
 o.validate = function(self, value, t)
 	if value ~= "" then
 		value = api.trim(value)
@@ -460,14 +501,35 @@ o.validate = function(self, value, t)
 	end
 	return nil, translate("DoH request address") .. " " .. translate("Format must be:") .. " URL,IP"
 end
-o:depends({xray_dns_mode = "tcp+doh"})
+o:depends({xray_dns_mode = "doh"})
 o:depends({singbox_dns_mode = "doh"})
+o:depends({singbox_dns_mode = "http3"})
 
 o = s:option(Value, "remote_dns_client_ip", translate("EDNS Client Subnet"))
+o.description = translate("Notify the DNS server when the DNS query is notified, the location of the client (cannot be a private IP address).") .. "<br />" ..
+		translate("This feature requires the DNS server to support the Edns Client Subnet (RFC7871).")
 o.datatype = "ipaddr"
 o:depends({dns_mode = "sing-box"})
 o:depends({dns_mode = "xray"})
 o:depends({_node_sel_shunt = "1"})
+
+o = s:option(Flag, "remote_fakedns", "FakeDNS", translate("Use FakeDNS work in the domain that proxy."))
+o.default = "0"
+o.rmempty = false
+o:depends({dns_mode = "sing-box"})
+o:depends({dns_mode = "xray"})
+o.validate = function(self, value, t)
+	if value and value == "1" then
+		local _dns_mode = s.fields["dns_mode"]:formvalue(t)
+		local _tcp_node = s.fields["tcp_node"]:formvalue(t)
+		if _dns_mode and _tcp_node then
+			if (m:get(_tcp_node, "type") or ""):lower() ~= _dns_mode and not _tcp_node:find("Socks_") then
+				return nil, translatef("TCP node must be '%s' type to use FakeDNS.", _dns_mode)
+			end
+		end
+	end
+	return value
+end
 
 o = s:option(ListValue, "chinadns_ng_default_tag", translate("Default DNS"))
 o.default = "none"
@@ -486,6 +548,11 @@ o.description = desc
 		.. "<li>" .. translate("Accept: Trust the Reply, using this option can improve DNS resolution speeds for some mainland IPv4-only sites.") .. "</li>"
 		.. "</ul>"
 o:depends({dns_shunt = "chinadns-ng", tcp_proxy_mode = "proxy", chn_list = "direct"})
+
+o = s:option(Flag, "force_https_soa", translate("Force HTTPS SOA"), translate("Force queries with qtype 65 to respond with an SOA record."))
+o.default = "0"
+o.rmempty = false
+o:depends({dns_shunt = "chinadns-ng"})
 
 o = s:option(ListValue, "use_default_dns", translate("Default DNS"))
 o.default = "direct"
