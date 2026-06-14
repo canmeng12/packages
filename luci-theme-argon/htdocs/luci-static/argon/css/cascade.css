@@ -729,15 +729,17 @@ select[multiple="multiple"] {
   box-shadow: rgba(0, 0, 0, 0.75) 0 0 35px -5px;
 }
 .login-page .login-container .login-form {
-  position: absolute;
+  position: relative;
   top: 0;
   left: 0;
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   max-width: 26rem;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .login-page .login-container .login-form .brand {
   display: flex;
@@ -1211,12 +1213,16 @@ select[multiple="multiple"] {
 .main-right > #maincontent .Dashboard .dashboard-bg {
   background-color: #fff;
 }
+.main-right > #maincontent .Dashboard .table {
+  width: 100%;
+}
 .main-right > #maincontent .Dashboard .settings-info {
   padding-top: 1em;
   padding-bottom: 1em;
 }
 .main-right > #maincontent .Dashboard .settings-info p span:nth-child(2) {
   max-height: 18.5px;
+  max-width: inherit;
   top: 4px;
 }
 .main-right > #maincontent .Dashboard .settings-info .label {
@@ -1400,6 +1406,10 @@ footer > a {
   transform: none;
   margin: 5em auto;
 }
+.alert-message {
+  transform: none;
+  position: static;
+}
 .alert-message > h4 {
   font-size: 110%;
   font-weight: bold;
@@ -1409,6 +1419,10 @@ footer > a {
 }
 .alert-message .btn {
   padding: 0.3rem 0.6rem;
+}
+#maincontent > .alert-message {
+  position: fixed;
+  transform: translate(-50%, -50%);
 }
 .container .alert,
 .container .alert-message {
@@ -1578,12 +1592,12 @@ table > thead > tr > th,
   align-self: flex-end;
   flex: 1 1 auto;
 }
-tr > td,
-tr > th,
-.tr > .td,
-.tr > .th,
-.cbi-section-table-row::before,
-#cbi-wireless > #wifi_assoclist_table > .tr:nth-child(2) {
+body:not([data-page="admin-dashboard"]) tr > td,
+body:not([data-page="admin-dashboard"]) tr > th,
+body:not([data-page="admin-dashboard"]) .tr > .td,
+body:not([data-page="admin-dashboard"]) .tr > .th,
+body:not([data-page="admin-dashboard"]) .cbi-section-table-row::before,
+body:not([data-page="admin-dashboard"]) #cbi-wireless > #wifi_assoclist_table > .tr:nth-child(2) {
   border-top: thin solid #ddd;
   padding: 1.1em 1.25rem;
 }
@@ -2371,7 +2385,6 @@ body:not(.Interfaces) .cbi-rowstyle-2:first-child {
   cursor: pointer;
   user-select: none;
   font-size: 0;
-  color: #8898aa;
   background-color: currentColor;
   mask-image: var(--dropdown-arrow-icon);
   mask-repeat: no-repeat;
@@ -3239,6 +3252,24 @@ input[name="nslookup"] {
 pre.command-output {
   padding: 1.5rem;
 }
+.alert-message.spinning,
+.modal.alert-message.spinning {
+  position: relative;
+}
+.alert-message.spinning::before,
+.modal.alert-message.spinning::before {
+  height: 16px;
+  width: 16px;
+  position: absolute;
+  top: 2rem;
+  left: 0.5rem;
+}
+.cbi-dropdown.cbi-button-positive > ul > li[display="0"] {
+  color: #fff;
+}
+.cbi-dropdown[open] > ul.dropdown > li[selected] {
+  color: #000;
+}
 /* page fix */
 [data-page="admin-system-autoreboot"] #cbi-autoreboot {
   margin-top: 0;
@@ -3625,6 +3656,12 @@ pre.command-output {
 [data-page="admin-status-nftables"] .nft-chain-hook {
   padding: 0.5rem 1.25rem;
 }
+[data-page="admin-status-nftables"] .alert-message {
+  opacity: 1;
+}
+[data-page="admin-status-nftables"] .alert-message.fade-out {
+  opacity: 0;
+}
 [data-page="admin-services-nlbw-display"] .cbi-section[data-tab="export"] {
   padding: 1.5rem !important;
 }
@@ -3651,6 +3688,12 @@ pre.command-output {
 }
 #cbi-dockerd .cbi-section.cbi-tblsection {
   padding: 0;
+}
+#cbi-smartdns #service_status {
+  padding: 16px;
+}
+#cbi-smartdns .cbi-section-node {
+  padding: 16px;
 }
 #cbi-docker .cbi-section .cbi-section-node {
   box-sizing: border-box;
@@ -3714,6 +3757,13 @@ pre.command-output {
 }
 [data-page^="admin-services-openclash"] .sub-card .card-title {
   margin-top: 5px;
+}
+[data-page^="admin-services-openclash"] .oc .sub-card:hover {
+  transform: none;
+}
+[data-page^="admin-services-openclash"] .oc .myip-ip-item:hover,
+[data-page^="admin-services-openclash"] .oc .myip-check-item:hover {
+  transform: none;
 }
 [data-page^="admin-services-openclash"] .oc .main-cards-container {
   margin: 0 !important;
@@ -3796,6 +3846,25 @@ pre.command-output {
 [data-page="admin-vpn-passwall"] h4 {
   background: transparent;
 }
+[data-page^="admin-vpn-passwall2"] .tr,
+[data-page^="admin-services-passwall2"] .tr,
+[data-page^="admin-vpn-passwall2"] .td,
+[data-page^="admin-services-passwall2"] .td,
+[data-page^="admin-vpn-passwall2"] .th,
+[data-page^="admin-services-passwall2"] .th,
+[data-page^="admin-vpn-passwall2"] .cbi-section-table-row,
+[data-page^="admin-services-passwall2"] .cbi-section-table-row,
+[data-page^="admin-vpn-passwall2"] #cbi-passwall2-socks,
+[data-page^="admin-services-passwall2"] #cbi-passwall2-socks,
+[data-page^="admin-vpn-passwall2"] #cbi-passwall2-socks *,
+[data-page^="admin-services-passwall2"] #cbi-passwall2-socks * {
+  overflow: visible !important;
+  max-height: none !important;
+  transform: none !important;
+  filter: none !important;
+  contain: none !important;
+  clip-path: none !important;
+}
 /* openvpn bug fix */
 .OpenVPN a {
   line-height: initial !important;
@@ -3819,6 +3888,22 @@ pre.command-output {
 }
 #wifi_assoclist_table > .tr > .td[data-title="RX Rate / TX Rate"] {
   width: 23rem;
+}
+#cbi-wireless,
+#cbi-wireless *,
+#wifi_assoclist_table,
+#wifi_assoclist_table * {
+  overflow: visible !important;
+  max-height: none !important;
+  transform: none !important;
+  filter: none !important;
+  contain: none !important;
+  clip-path: none !important;
+}
+#cbi-wireless,
+#wifi_assoclist_table {
+  height: auto !important;
+  min-height: 0 !important;
 }
 /* samba */
 #cbi-samba [data-tab="template"] .cbi-value-field {

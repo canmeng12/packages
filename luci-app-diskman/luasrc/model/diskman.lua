@@ -14,6 +14,138 @@ for _, cmd in ipairs(CMD) do
     d.command[cmd] = command:match("^.+"..cmd) or nil
 end
 
+local function sysfs_transport(device)
+  local path = (luci.util.exec("readlink -f /sys/class/block/" .. device .. "/device 2>/dev/null") or ""):match("%S+")
+  if not path then
+    return nil
+  end
+
+  local seen = {}
+  local parent = path
+  while parent and parent ~= "/" do
+    local subsystem = (luci.util.exec("readlink -f " .. parent .. "/subsystem 2>/dev/null") or ""):match("([^/]+)$")
+    if subsystem then
+      seen[subsystem] = true
+    end
+    parent = parent:match("^(.*)/[^/]+$")
+  end
+
+  if seen.usb then
+    return "usb"
+  elseif seen.nvme then
+    return "nvme"
+  elseif seen.ata then
+    return "ata"
+  elseif seen.scsi then
+    return "scsi"
+  end
+
+  return nil
+end
+
+local function udevadm_transport(device)
+  if luci.sys.exec("which udevadm") == "" then
+    return nil
+  end
+
+  local cmd = io.popen("udevadm info --query=property --name=/dev/" .. device .. " 2>/dev/null")
+  if not cmd then
+    return nil
+  end
+
+  local transport
+  for line in cmd:lines() do
+    local key, value = line:match("^(%S+)=(.*)$")
+    if key == "ID_BUS" and value and value ~= "" then
+      transport = value
+      break
+    end
+  end
+  cmd:close()
+
+  return transport
+end
+
+local function lsblk_transport(device)
+  if not d.command.lsblk then
+    return nil
+  end
+
+  local transport = (luci.util.exec(d.command.lsblk .. " -dn -o TRAN /dev/" .. device .. " 2>/dev/null") or ""):match("(%S+)")
+  if transport and transport ~= "-" then
+    return transport
+  end
+
+  return nil
+end
+
+local function device_transport(device)
+  return lsblk_transport(device) or udevadm_transport(device) or sysfs_transport(device)
+end
+
+local function smartctl_candidates(device)
+  local transport = device_transport(device)
+  if device:match("^nvme%d+n%d+") or device:match("^nvme%d+$") or transport == "nvme" then
+    return { "nvme", "" }
+  end
+  if transport == "usb" then
+    return { "sat", "scsi", "" }
+  end
+
+  return { "", "sat", "scsi" }
+end
+
+local function run_smartctl(device, devtype, options)
+  if not d.command.smartctl then
+    return ""
+  end
+
+  local cmd = d.command.smartctl
+  if devtype and devtype ~= "" then
+    cmd = cmd .. " -d " .. devtype
+  end
+  if options and options ~= "" then
+    cmd = cmd .. " " .. options
+  end
+  cmd = cmd .. " /dev/" .. device .. " 2>&1"
+
+  local pipe = io.popen(cmd)
+  if not pipe then
+    return ""
+  end
+
+  local output = pipe:read("*all") or ""
+  pipe:close()
+  return output
+end
+
+local function smartctl_success(output)
+  return output:match("START OF SMART DATA SECTION")
+    or output:match("START OF READ SMART DATA SECTION")
+    or output:match("NVMe Version:")
+    or output:match("SMART Health Status:")
+    or output:match("Device is in [A-Z]+ mode")
+end
+
+local function smartctl_output(device, options)
+  options = options or ""
+  local fallback
+
+  for _, devtype in ipairs(smartctl_candidates(device)) do
+    local output = run_smartctl(device, devtype, options)
+    if output ~= "" then
+      fallback = fallback or output
+      if smartctl_success(output) then
+        return output
+      end
+    end
+  end
+
+  return fallback or ""
+end
+
+d.smartctl_output = smartctl_output
+
 d.command.mount = nixio.fs.access("/usr/bin/mount") and "/usr/bin/mount" or "/bin/mount"
 d.command.umount = nixio.fs.access("/usr/bin/umount") and "/usr/bin/umount" or "/bin/umount"
 
@@ -36,16 +168,32 @@ end
 local get_smart_info = function(device)
   local section
   local smart_info = {}
-  for _, line in ipairs(luci.util.execl(d.command.smartctl .. " -H -A -i -n standby -f brief /dev/" .. device)) do
+  for line in (d.smartctl_output(device, "-H -A -i -n standby -f brief") or ""):gmatch("[^\r\n]+") do
     local attrib, val
+    if not smart_info.health then
+      smart_info.health = line:match(".-overall%-health.-: (.+)")
+        or line:match("^SMART Health Status:%s*(.+)")
+    end
+    if not smart_info.temp then
+      local temp_id, temp_name, temp_raw
+      temp_id, temp_name, temp_raw = line:match("^%s*(%d+)%s+([%w_%-]+).-%s+([0-9]+)%s*%(")
+      if temp_id and (temp_id == "194" or temp_id == "190")
+        and (temp_name == "Temperature_Celsius" or temp_name == "Temperature" or temp_name == "Airflow_Temperature_Cel") then
+        smart_info.temp = temp_raw .. "°C"
+      else
+        temp_id, temp_name, temp_raw = line:match("^%s*(%d+)%s+([%w_%-]+).-%s+([0-9]+)%s*$")
+        if temp_id and (temp_id == "194" or temp_id == "190")
+          and (temp_name == "Temperature_Celsius" or temp_name == "Temperature" or temp_name == "Airflow_Temperature_Cel") then
+          smart_info.temp = temp_raw .. "°C"
+        end
+      end
+    end
     if section == 1 then
         attrib, val = line:match "^(.-):%s+(.+)"
     elseif section == 2 and smart_info.nvme_ver then
       attrib, val = line:match("^(.-):%s+(.+)")
-      if not smart_info.health then smart_info.health = line:match(".-overall%-health.-: (.+)") end
     elseif section == 2 then
       attrib, val = line:match("^([0-9 ]+)%s+[^ ]+%s+[POSRCK-]+%s+[0-9-]+%s+[0-9-]+%s+[0-9-]+%s+[0-9-]+%s+([0-9-]+)")
-      if not smart_info.health then smart_info.health = line:match(".-overall%-health.-: (.+)") end
     else
       attrib = line:match "^=== START OF (.*) SECTION ==="
       if attrib and attrib:match("INFORMATION") then
@@ -73,7 +221,11 @@ local get_smart_info = function(device)
     --   smart_info.logic_sec = smart_info.phy_sec
     elseif attrib == "Serial Number" then
       smart_info.sn = val
-    elseif attrib == "194" or attrib == "Temperature" then
+    elseif attrib == "194" or attrib == "Temperature_Celsius" or attrib == "Temperature" then
+      if val ~= "-" then
+        smart_info.temp = (val:match("(%d+)") or "?") .. "°C"
+      end
+    elseif attrib == "190" or attrib == "Airflow_Temperature_Cel" then
       if val ~= "-" then
         smart_info.temp = (val:match("(%d+)") or "?") .. "°C"
       end

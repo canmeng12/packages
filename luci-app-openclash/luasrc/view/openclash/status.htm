@@ -8,16 +8,18 @@
     --text-primary: #374151;
     --text-secondary: #64748b;
     --text-title: #4d4d4d;
+    --select-hover: #ebebeb;
     --border-color: #b1b1b1;
     --border-light: #e2e8f0;
     --hover-bg: #f8fafc;
     --primary-color: #3b82f6;
     --success-color: #059669;
     --success-dark: #047857;
-    --warning-color: #f59e0b;
+    --tip-color: #f59e0b;
     --error-color: #dc2626;
-    --warning-log: #ff00bb;
-    --watch-log: #b300ff;
+    --warning-color: #ff00bb;
+    --watchdog-color: #b300ff;
+    --info-color: #3b82f6;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --radius-sm: 6px;
@@ -25,9 +27,13 @@
     --radius-lg: 8px;
     --transition-fast: 0.15s ease;
     --transition-normal: 0.3s ease;
+    --stripe-color: rgba(255,255,255,0.24);
+    --stripe-opacity: 0.5;
+    --stripe-size: 40px;
 
     --control-height: 32px;
     --card-padding: 6px 8px;
+    --version-right: 8px;
     --gap-size: 10px;
 
     --row-1-height: 160px;
@@ -43,6 +49,7 @@
     --text-primary: #ebebeb;
     --text-secondary: #d0cfcf;
     --text-title: #e5e7eb;
+    --select-hover: #ebebeb;
     --border-color: #939393;
     --border-light: #6b7280;
     --hover-bg: #374151;
@@ -50,9 +57,12 @@
     --success-color: #34d399;
     --success-dark: #10b981;
     --error-color: #ff7070;
-    --warning-color: #f9bb51;
-    --warning-log: #fa41c8;
-    --watch-log: #c147f5;
+    --tip-color: #f9bb51;
+    --warning-color: #fa41c8;
+    --watchdog-color: #c147f5;
+    --info-color: #3b82f6;
+    --stripe-color: rgba(0, 0, 0, 0.255);
+    --stripe-opacity: 0.8;
 }
 
 .oc[data-darkmode="true"] .plugin-toggle-slider {
@@ -94,7 +104,7 @@
 }
 
 .oc[data-darkmode="true"] .subscription-progress-fill.medium {
-    background: var(--warning-color);
+    background: var(--tip-color);
 }
 
 .oc[data-darkmode="true"] .subscription-progress-fill.low {
@@ -292,6 +302,13 @@
     box-sizing: border-box;
 }
 
+.oc .sub-card:hover {
+    background: var(--hover-bg, #f3f4f6);
+    border-color: var(--primary-color, #3b82f6);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
 .oc .sub-card.stat-item {
     display: flex;
     flex-direction: column;
@@ -330,7 +347,7 @@
 
 .oc .version-display-container {
     position: absolute;
-    right: 10px;
+    right: var(--version-right);
     display: flex;
     gap: 8px;
     z-index: 2;
@@ -904,12 +921,13 @@
     min-height: 24px;
     min-width: 0;
     gap: 8px;
+    padding: 0 20px;
 }
 
 .oc .subscription-info-details {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
     flex: 1;
     min-height: 80px;
     padding-left: 20px;
@@ -935,6 +953,30 @@
     height: 100%;
     border-radius: 4px;
     transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.oc .subscription-progress-fill::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(45deg, var(--stripe-color) 25%, transparent 25%, transparent 50%, var(--stripe-color) 50%, var(--stripe-color) 75%, transparent 75%, transparent);
+    background-size: var(--stripe-size) var(--stripe-size);
+    animation: oc-stripes 2s linear infinite;
+    opacity: var(--stripe-opacity);
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    border-radius: 4px;
+}
+
+@keyframes oc-stripes {
+    to { background-position: 40px 0; }
+}
+
+.oc[data-darkmode="true"] .subscription-progress-fill::before {
+    background-image: linear-gradient(45deg, var(--stripe-color) 25%, transparent 25%, transparent 50%, var(--stripe-color) 50%, var(--stripe-color) 75%, transparent 75%, transparent);
+    opacity: var(--stripe-opacity);
 }
 
 .oc .subscription-progress-fill.high {
@@ -942,7 +984,7 @@
 }
 
 .oc .subscription-progress-fill.medium {
-    background: var(--warning-color);
+    background: var(--tip-color);
 }
 
 .oc .subscription-progress-fill.low {
@@ -960,20 +1002,115 @@
     display: block;
 }
 
+.oc .subscription-actions-row {
+    width: 100%;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.oc .subscription-overwrite-tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+    margin-right: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+}
+
+.oc .subscription-overwrite-tags::-webkit-scrollbar {
+    display: none;
+}
+
+.oc .subscription-overwrite-tags.drag-scroll-enabled {
+    cursor: grab;
+    user-select: none;
+}
+
+.oc .subscription-overwrite-tags.dragging {
+    cursor: grabbing;
+}
+
+.oc .subscription-overwrite-tag {
+    height: 28px;
+    width: fit-content;
+    padding: 0 8px;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--bg-white);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    word-break: keep-all;
+    line-height: 1;
+    box-sizing: border-box;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.oc .subscription-overwrite-tag.type-http {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.oc .subscription-overwrite-tag.type-file {
+    color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.oc .subscription-overwrite-tag.type-unknown {
+    color: var(--warning-color);
+    border-color: var(--warning-color);
+}
+
+.oc .subscription-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 .oc .subscription-info-text {
     font-size: 13px;
     color: var(--text-secondary);
     line-height: 1.4;
-    text-overflow: ellipsis;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     white-space: nowrap;
     display: block;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: default;
+    user-select: text;
+    -webkit-overflow-scrolling: touch;
+}
+
+.oc .subscription-info-text::-webkit-scrollbar {
+    display: none;
+}
+
+.oc .subscription-info-text.is-draggable {
+    cursor: grab;
+    user-select: none;
+}
+
+.oc .subscription-info-text.dragging {
+    cursor: grabbing;
 }
 
 /* Multiple Providers Grid Layout */
 .oc .subscription-providers-grid {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     padding: 8px 0;
     max-width: 100%;
     width: 100%;
@@ -1104,8 +1241,26 @@
     text-overflow: ellipsis;
     min-width: 0;
     max-width: 100%;
-    padding-left: 20px;
     overflow: hidden;
+}
+
+.oc .config-file-name .selected-file-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 0.2em;
+    margin-bottom: 0.2em;
+    background: var(--primary-color);
+    flex-shrink: 0;
+    animation: gentlePulse 4s cubic-bezier(.17,.67,.83,.67) infinite;
+}
+
+.oc .config-file-name .age-file-icon {
+    display: inline-block;
+    vertical-align: middle;
+    color: var(--error-color);
 }
 
 .oc .config-file-bottom {
@@ -1176,13 +1331,20 @@
     min-width: 0;
     max-width: 30vw;
     overflow: hidden;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+}
+
+.oc .file-info:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
 }
 
 .oc .file-info-item {
     display: block;
     align-items: center;
     white-space: nowrap;
-    padding-right: 20px;
+    padding: 2px 6px;
     font-size: 13px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1524,6 +1686,13 @@
         width: 24px;
         height: 24px;
         min-width: 24px;
+    }
+
+    .oc .subscription-overwrite-tag {
+        height: 24px;
+        width: fit-content;
+        font-size: 10px;
+        padding: 0 6px;
     }
 
     .oc .icon-btn svg {
@@ -1904,21 +2073,24 @@
                                                     </div>
                                                     <div id="subscription-info-text" class="subscription-info-text"><%:Collecting data...%></div>
                                                 </div>
-                                                <div class="card-actions">
-                                                    <button type="button" class="icon-btn action-btn" id="refresh-subscription" title="<%:Refresh%>" onclick="return refreshSubscriptionInfo()">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                            <path d="M23 4v6h-6"></path>
-                                                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <button type="button" class="icon-btn action-btn" id="config-subscription-url" title="<%:Specify URL%>" onclick="return setSubscriptionUrl()">
-                                                        <svg width="14" height="14" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4">
-                                                            <path d="M4 6H44V36H29L24 41L19 36H4V6Z"/>
-                                                            <path d="M23 21H25.0025" />
-                                                            <path d="M33.001 21H34.9999"/>
-                                                            <path d="M13.001 21H14.9999"/>
-                                                        </svg>
-                                                    </button>
+                                                <div class="card-actions subscription-actions-row">
+                                                    <div id="subscription-overwrite-tags" class="subscription-overwrite-tags" style="display: none;"></div>
+                                                    <div class="subscription-action-buttons">
+                                                        <button type="button" class="icon-btn action-btn" id="refresh-subscription" title="<%:Refresh%>" onclick="return refreshSubscriptionInfo()">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                                <path d="M23 4v6h-6"></path>
+                                                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                                            </svg>
+                                                        </button>
+                                                        <button type="button" class="icon-btn action-btn" id="config-subscription-url" title="<%:Specify URL%>" onclick="return setSubscriptionUrl()">
+                                                            <svg width="14" height="14" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4">
+                                                                <path d="M4 6H44V36H29L24 41L19 36H4V6Z"/>
+                                                                <path d="M23 21H25.0025" />
+                                                                <path d="M33.001 21H34.9999"/>
+                                                                <path d="M13.001 21H14.9999"/>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -2248,14 +2420,10 @@
             DISCONNECTED: 2,
             ERROR: 3
         },
-        retryAttempts: {},
-        maxRetries: 3,
-        reconnectDelay: 2000,
+        reconnectDelay: 5000,
         heartbeatInterval: 30000,
         heartbeatTimers: {},
         _ws_connect: false,
-        _ws_error: false,
-        _ws_retry: 0,
         _allowedCloseCodes: [1000, 1001, 1005, 1006],
 
         isSupported: function() {
@@ -2283,8 +2451,6 @@
                     lastActivity: Date.now(),
                     options: options
                 };
-
-                this.retryAttempts[type] = 0;
 
                 if (ws.addEventListener) {
                     ws.addEventListener('open', this.handleOpen.bind(this, type));
@@ -2362,8 +2528,6 @@
                 this.closeConnection(types[i]);
             }
             this._ws_connect = false;
-            this._ws_error = false;
-            this._ws_retry = 0;
         },
 
         handleMessage: function(type, event) {
@@ -2389,13 +2553,13 @@
                 connection.state = this.connectionStates.CONNECTED;
                 connection.lastActivity = Date.now();
             }
-            this.retryAttempts[type] = 0;
             this.startHeartbeat(type);
 
-            if (type === 'traffic' || Object.keys(this.connections).length === 3) {
+            if (Object.keys(this.connections).length === 3) {
                 this._ws_connect = true;
-                this._ws_error = false;
-                this._ws_retry = 0;
+                if (NetworkStatsManager.isEnabled) {
+                    NetworkStatsManager.stop();
+                }
             }
         },
 
@@ -2404,15 +2568,14 @@
             if (connection) {
                 connection.state = this.connectionStates.ERROR;
             }
-            this._ws_error = true;
             this.stopHeartbeat(type);
-
-            if (type === 'traffic') {
-                this.enableFallbackMode();
-            }
+            this.enableFallbackMode();
         },
 
         handleClose: function(type, event) {
+            // if not connected, start log display because core maybe restart
+            LogManager.startLogDisplay();
+
             var connection = this.connections[type];
             if (connection) {
                 connection.state = this.connectionStates.DISCONNECTED;
@@ -2429,7 +2592,6 @@
             if (connection) {
                 connection.state = this.connectionStates.ERROR;
             }
-            this._ws_error = true;
             this.enableFallbackMode();
         },
 
@@ -2437,25 +2599,22 @@
             var self = this;
             var connection = this.connections[type];
 
-            if (!connection || this.retryAttempts[type] >= this.maxRetries) {
+            if (!connection) {
                 this.enableFallbackMode();
                 return;
             }
-
-            this.retryAttempts[type] = (this.retryAttempts[type] || 0) + 1;
-            var delay = this.reconnectDelay * Math.pow(1.5, this.retryAttempts[type] - 1);
 
             setTimeout(function() {
                 if (self.connections[type] && self.connections[type].state !== self.connectionStates.CONNECTED) {
                     self.createConnection(type, connection.url, connection.messageHandler, connection.options);
                 }
-            }, delay);
+            }, this.reconnectDelay);
         },
 
         enableFallbackMode: function() {
             this._ws_connect = false;
             this.closeAll();
-            if (typeof NetworkStatsManager !== "undefined" && !NetworkStatsManager.isEnabled) {
+            if (!NetworkStatsManager.isEnabled) {
                 NetworkStatsManager.start();
             }
         },
@@ -2480,14 +2639,6 @@
                 }
             }
             return false;
-        },
-
-        resetRetryCount: function(type) {
-            if (type) {
-                this.retryAttempts[type] = 0;
-            } else {
-                this.retryAttempts = {};
-            }
         }
     };
 
@@ -2547,6 +2698,7 @@
 
                 this.rawCurrentConfig = currentConfigFile;
                 this.configList = configFiles;
+                window.configFiles = configFiles;
                 this.currentConfig = currentConfigFile;
                 this.currentConfigIndex = -1;
 
@@ -2565,7 +2717,8 @@
                                 if (typeof file === 'object' && file.mtime && file.size) {
                                     currentFileInfo = {
                                         mtime: file.mtime,
-                                        size: file.size
+                                        size: file.size,
+                                        age: file.age
                                     };
                                 }
                                 break;
@@ -2575,7 +2728,7 @@
 
                     this.updateSubscriptionDisplay(currentConfigFile, currentFileInfo);
 
-                    if (currentConfigFile && SubscriptionManager.currentConfigFile !== currentConfigFile) {
+                    if (SubscriptionManager.currentConfigFile !== currentConfigFile) {
                         SubscriptionManager.currentConfigFile = currentConfigFile;
                         SubscriptionManager.getSubscriptionInfo();
                     }
@@ -2735,9 +2888,7 @@
                 var displayName = this.formatDisplayName(configFile);
                 if (configFile === this.rawCurrentConfig) {
                     configNameElement.innerHTML =
-                        '<svg width="0.6em" height="0.6em" viewBox="0 0 24 24" fill="var(--primary-color)" style="vertical-align:middle;margin-right:0.2em;margin-bottom:0.2em;">' +
-                        '<circle cx="12" cy="12" r="8" fill="var(--primary-color)"/>' +
-                        '</svg>' + displayName;
+                        '<span class="selected-file-dot"></span>' + displayName;
                 } else {
                     configNameElement.textContent = displayName;
                 }
@@ -2761,6 +2912,10 @@
 
                 if (detailsSection) {
                     detailsSection.style.display = 'flex';
+                }
+
+                if (fileInfo.age && configNameElement) {
+                    configNameElement.innerHTML += ' <span class="age-file-icon" title="<%:Age Encryption File%>"><svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 9.25564L24.0086 4L42 9.25564V20.0337C42 31.3622 34.7502 41.4194 24.0026 45.0005C13.2521 41.4195 6 31.36 6 20.0287V9.25564Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M15 23L22 30L34 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
                 }
             } else {
                 if (fileModifyTimeElement) {
@@ -2848,12 +3003,14 @@
                     }
                     SubscriptionManager.getSubscriptionInfo();
                 }
+                OverwriteSubscribeManager.render(OverwriteSubscribeManager.data);
             } else {
                 this.currentConfig = '';
                 this.currentConfigIndex = -1;
                 SubscriptionManager.currentConfigFile = '';
                 this.hideSubscriptionDisplay();
                 this.updateNavigationArrows();
+                OverwriteSubscribeManager.render(OverwriteSubscribeManager.data);
             }
         },
 
@@ -2862,12 +3019,12 @@
             for (var i = 0; i < this.configList.length; i++) {
                 var file = this.configList[i];
                 var filePath = typeof file === 'string' ? file : (file.path || file.filepath || file);
-
                 if (filePath === selectedValue) {
                     if (typeof file === 'object' && file.mtime && file.size) {
                         selectedFileInfo = {
                             mtime: file.mtime,
-                            size: file.size
+                            size: file.size,
+                            age: file.age
                         };
                     }
                     break;
@@ -2911,7 +3068,6 @@
 
             var file = this.configList[index];
             var filePath = typeof file === 'string' ? file : (file.path || file.filepath || file);
-
             if (this.selectElement) {
                 this.selectElement.value = filePath;
             }
@@ -2931,6 +3087,8 @@
                 }
                 SubscriptionManager.getSubscriptionInfo();
             }
+
+            OverwriteSubscribeManager.render(OverwriteSubscribeManager.data);
 
             return true;
         },
@@ -2955,19 +3113,117 @@
         updateTimer: null,
         isInitialized: false,
 
+        enableOverflowDrag: function(element) {
+            if (!element) return;
+
+            function updateDragState() {
+                var isOverflowing = element.scrollWidth > element.clientWidth + 1;
+                if (isOverflowing) {
+                    element.classList.add('is-draggable');
+                } else {
+                    element.classList.remove('is-draggable');
+                    element.classList.remove('dragging');
+                    element.scrollLeft = 0;
+                }
+            }
+
+            if (!element._dragBound) {
+                var isDragging = false;
+                var startX = 0;
+                var startScrollLeft = 0;
+                var touchIdentifier = null;
+
+                function endDrag() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    touchIdentifier = null;
+                    element.classList.remove('dragging');
+                }
+
+                element.addEventListener('mousedown', function(e) {
+                    if (!element.classList.contains('is-draggable')) return;
+                    isDragging = true;
+                    startX = e.pageX - element.getBoundingClientRect().left;
+                    startScrollLeft = element.scrollLeft;
+                    element.classList.add('dragging');
+                    e.preventDefault();
+                });
+
+                element.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    var x = e.pageX - element.getBoundingClientRect().left;
+                    var walk = (x - startX) * 1.2;
+                    element.scrollLeft = startScrollLeft - walk;
+                    e.preventDefault();
+                });
+
+                element.addEventListener('mouseleave', function() {
+                    endDrag();
+                });
+
+                element.addEventListener('mouseup', function() {
+                    endDrag();
+                });
+
+                element.addEventListener('touchstart', function(e) {
+                    if (!element.classList.contains('is-draggable')) return;
+                    if (!e.touches || e.touches.length !== 1) return;
+
+                    var touch = e.touches[0];
+                    isDragging = true;
+                    touchIdentifier = touch.identifier;
+                    startX = touch.pageX - element.getBoundingClientRect().left;
+                    startScrollLeft = element.scrollLeft;
+                    element.classList.add('dragging');
+                }, { passive: true });
+
+                element.addEventListener('touchmove', function(e) {
+                    if (!isDragging || !e.touches || e.touches.length === 0) return;
+
+                    var touch = null;
+                    for (var i = 0; i < e.touches.length; i++) {
+                        if (e.touches[i].identifier === touchIdentifier) {
+                            touch = e.touches[i];
+                            break;
+                        }
+                    }
+
+                    if (!touch) return;
+
+                    var x = touch.pageX - element.getBoundingClientRect().left;
+                    var walk = (x - startX) * 1.2;
+                    element.scrollLeft = startScrollLeft - walk;
+                    e.preventDefault();
+                }, { passive: false });
+
+                element.addEventListener('touchend', function() {
+                    endDrag();
+                });
+
+                element.addEventListener('touchcancel', function() {
+                    endDrag();
+                });
+
+                element.addEventListener('dragstart', function(e) {
+                    e.preventDefault();
+                });
+
+                element._dragBound = true;
+            }
+
+            updateDragState();
+        },
+
         init: function() {
             if (this.isInitialized) return;
             this.isInitialized = true;
-
-            setTimeout(function() {
-                SubscriptionManager.loadSubscriptionInfo();
-                SubscriptionManager.startAutoUpdate();
-            }, 500);
+            SubscriptionManager.loadSubscriptionInfo();
+            SubscriptionManager.startAutoUpdate();
         },
 
         loadSubscriptionInfo: function() {
             var currentConfig = ConfigFileManager.getCurrentConfig() || ConfigFileManager.getSelectedConfig();
-            if (currentConfig && currentConfig !== this.currentConfigFile) {
+            if (currentConfig !== this.currentConfigFile) {
                 this.currentConfigFile = currentConfig;
                 this.getSubscriptionInfo();
             }
@@ -2991,13 +3247,15 @@
                 try {
                     var parsedData = JSON.parse(cachedData);
 
-                    if (parsedData.sub_info && parsedData.sub_info !== "No Sub Info Found") {
-                        if (this.currentConfigFile === requestConfigFile) {
-                            this.displaySubscriptionInfo(parsedData);
-                        }
-                    } else if (parsedData.sub_info === "No Sub Info Found") {
-                        if (this.currentConfigFile === requestConfigFile) {
-                            this.showNoInfo();
+                    if (parsedData.providers) {
+                        if (parsedData.providers.length > 0) {
+                            if (this.currentConfigFile === requestConfigFile) {
+                                this.displaySubscriptionInfo(parsedData);
+                            }
+                        } else {
+                            if (this.currentConfigFile === requestConfigFile) {
+                                this.showNoInfo();
+                            }
                         }
                     }
 
@@ -3025,16 +3283,33 @@
                     if (SubscriptionManager.currentConfigFile !== requestConfigFile) {
                         return;
                     }
-                    if (x && x.status == 200 && status.sub_info && status.sub_info !== "No Sub Info Found") {
-                        SubscriptionManager.retryCount = 0;
-                        localStorage.setItem('sub_info_' + filename, JSON.stringify(status));
-                        SubscriptionManager.displaySubscriptionInfo(status);
-                    } else if (x && x.status == 200 && status.sub_info === "No Sub Info Found") {
-                        SubscriptionManager.retryCount = 0;
-                        localStorage.setItem('sub_info_' + filename, JSON.stringify(status));
-                        SubscriptionManager.showNoInfo();
+
+                    var needsErrorHandling = false;
+                    if (x && x.status == 200 && status.providers.length > 0) {
+                        var newProvidersLength = status.providers.length;
+                        var cachedProvidersLength = (parsedData && parsedData.providers) ? parsedData.providers.length : 0;
+
+                        if (newProvidersLength !== cachedProvidersLength && cachedProvidersLength > newProvidersLength) {
+                            needsErrorHandling = true;
+                        }
+
+                        if (!needsErrorHandling) {
+                            SubscriptionManager.retryCount = 0;
+                            localStorage.setItem('sub_info_' + filename, JSON.stringify(status));
+                            if (status.providers && status.providers.length === 0) {
+                                SubscriptionManager.showNoInfo();
+                            }
+                            SubscriptionManager.displaySubscriptionInfo(status);
+                        }
                     } else {
-                        SubscriptionManager.handleError();
+                        needsErrorHandling = true;
+                        if (!cachedData) {
+                            SubscriptionManager.showNoInfo();
+                        }
+                    }
+
+                    if (needsErrorHandling) {
+                        SubscriptionManager.handleError(status);
                     }
                 }, true);
             }
@@ -3058,15 +3333,11 @@
 
             container.style.display = 'flex';
 
-            if (data && data.sub_info && data.sub_info !== "No Sub Info Found") {
-                if (data.providers && Array.isArray(data.providers) && data.providers.length > 0) {
-                    if (data.providers.length > 1 || data.providers[0].provider_name) {
-                        this.displayMultipleProviders(data.providers, progressSection);
-                    } else {
-                        this.displaySingleProvider(data.providers[0], progressSection);
-                    }
+            if (data && data.providers && data.providers.length > 0) {
+                if (data.providers.length > 1 || data.providers[0].provider_name) {
+                    this.displayMultipleProviders(data.providers, progressSection);
                 } else {
-                    progressSection.style.display = 'none';
+                    this.displaySingleProvider(data.providers[0], progressSection);
                 }
             } else {
                 progressSection.style.display = 'none';
@@ -3117,6 +3388,7 @@
 
             infoText.textContent = infoString;
             infoText.title = tooltipString;
+            this.enableOverflowDrag(infoText);
         },
 
         displayMultipleProviders: function(providers, progressSection) {
@@ -3174,6 +3446,7 @@
 
                 infoText.textContent = infoString;
                 infoText.title = tooltipString;
+                SubscriptionManager.enableOverflowDrag(infoText);
 
                 card.appendChild(infoText);
                 progressSection.appendChild(card);
@@ -3303,12 +3576,17 @@
             }
         },
 
-        handleError: function() {
+        handleError: function(status) {
             if (this.retryCount >= this.maxRetries) {
-                this.showNoInfo();
                 this.retryCount = 0;
-                if (this.currentConfigFile) {
-                    localStorage.removeItem('sub_info_' + this.extractFilename(this.currentConfigFile));
+                if (this.currentConfigFile && status && status.providers) {
+                    localStorage.setItem('sub_info_' + filename, JSON.stringify(status));
+                }
+                if (!status.providers || status.providers.length === 0) {
+                    this.showNoInfo();
+                }
+                if (status.providers && status.providers.length > 0) {
+                    SubscriptionManager.displaySubscriptionInfo(status);
                 }
             } else {
                 this.retryCount++;
@@ -3376,27 +3654,18 @@
         },
 
         bindEvents: function() {
-            var self = this;
             var textarea = document.getElementById('subscription-url-textarea');
-            var overlay = document.getElementById('subscription-url-overlay');
 
             if (textarea) {
                 textarea.addEventListener('keydown', this.handleKeyDown.bind(this));
-            }
-            if (overlay) {
-                overlay.addEventListener('click', this.handleOverlayClick.bind(this));
             }
         },
 
         unbindEvents: function() {
             var textarea = document.getElementById('subscription-url-textarea');
-            var overlay = document.getElementById('subscription-url-overlay');
 
             if (textarea) {
                 textarea.removeEventListener('keydown', this.handleKeyDown.bind(this));
-            }
-            if (overlay) {
-                overlay.removeEventListener('click', this.handleOverlayClick.bind(this));
             }
         },
 
@@ -3404,12 +3673,6 @@
             if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
                 this.submit();
             } else if (event.key === 'Escape') {
-                this.hide();
-            }
-        },
-
-        handleOverlayClick: function(event) {
-            if (event.target.id === 'subscription-url-overlay') {
                 this.hide();
             }
         },
@@ -3444,26 +3707,285 @@
             });
         },
 
+        handleSubURL: function(urlresult) {
+            var textarea = document.getElementById('subscription-url-textarea');
+            if (!textarea) return;
+
+            var urls = '';
+            if (urlresult.type && urlresult.type === "multiple") {
+                for (var data in urlresult.providers) {
+                    urls += urlresult.providers[data].url + '#name=' + urlresult.providers[data].name + '\n';
+                }
+            }
+            if (urlresult.type && urlresult.type === "single") {
+                urls = urlresult.url;
+            }
+            textarea.value = urls;
+        },
+
         loadUrls: function() {
             var self = this;
+            var existingData = localStorage.getItem('sub_info_' + this.filename);
+            if (existingData) {
+                existingData = JSON.parse(existingData);
+                if (existingData.url_result) {
+                    this.handleSubURL(existingData.url_result);
+                    return;
+                }
+            };
+
             XHR.get('<%=luci.dispatcher.build_url("admin", "services", "openclash", "get_subscribe_info_data")%>', {
                 filename: this.filename
             }, function(x, status) {
                 if (x && x.status == 200 && status) {
-                    var textarea = document.getElementById('subscription-url-textarea');
-                    if (textarea) {
-                        var urls = '';
-                        if (status.url) {
-                            if (typeof status.url === 'string') {
-                                urls = status.url;
-                            } else if (Array.isArray(status.url)) {
-                                urls = status.url.join('\n');
-                            }
-                        }
-                        textarea.value = urls;
-                    }
+                    self.handleSubURL(status);
                 }
             });
+        }
+    };
+
+    var OverwriteSubscribeManager = {
+        container: null,
+        data: null,
+        isLoading: false,
+        _dragBound: false,
+        _isDragging: false,
+        _dragStartX: 0,
+        _dragStartScrollLeft: 0,
+        _touchIdentifier: null,
+
+        init: function() {
+            this.container = document.getElementById('subscription-overwrite-tags');
+            if (!this.container) return;
+            this.bindDragScroll();
+            this.load(false);
+        },
+
+        hasOverflow: function() {
+            if (!this.container) return false;
+            return this.container.scrollWidth > this.container.clientWidth + 1;
+        },
+
+        updateDragScrollState: function() {
+            if (!this.container) return;
+            if (this.hasOverflow()) {
+                this.container.classList.add('drag-scroll-enabled');
+            } else {
+                this.container.classList.remove('drag-scroll-enabled');
+                this.container.classList.remove('dragging');
+            }
+        },
+
+        bindDragScroll: function() {
+            if (!this.container || this._dragBound) {
+                return;
+            }
+
+            var self = this;
+
+            function endDrag() {
+                if (!self._isDragging) return;
+                self._isDragging = false;
+                self._touchIdentifier = null;
+                self.container.classList.remove('dragging');
+            }
+
+            this.container.addEventListener('mousedown', function(e) {
+                if (!self.hasOverflow()) {
+                    return;
+                }
+                self._isDragging = true;
+                self._dragStartX = e.pageX - self.container.offsetLeft;
+                self._dragStartScrollLeft = self.container.scrollLeft;
+                self.container.classList.add('dragging');
+                e.preventDefault();
+            });
+
+            this.container.addEventListener('mousemove', function(e) {
+                if (!self._isDragging) {
+                    return;
+                }
+                var x = e.pageX - self.container.offsetLeft;
+                var walk = (x - self._dragStartX) * 1.5;
+                self.container.scrollLeft = self._dragStartScrollLeft - walk;
+                e.preventDefault();
+            });
+
+            this.container.addEventListener('mouseleave', function() {
+                endDrag();
+            });
+
+            this.container.addEventListener('mouseup', function() {
+                endDrag();
+            });
+
+            this.container.addEventListener('touchstart', function(e) {
+                if (!self.hasOverflow() || !e.touches || e.touches.length !== 1) {
+                    return;
+                }
+                var touch = e.touches[0];
+                self._isDragging = true;
+                self._touchIdentifier = touch.identifier;
+                self._dragStartX = touch.pageX - self.container.offsetLeft;
+                self._dragStartScrollLeft = self.container.scrollLeft;
+                self.container.classList.add('dragging');
+            }, { passive: true });
+
+            this.container.addEventListener('touchmove', function(e) {
+                if (!self._isDragging || !e.touches || e.touches.length === 0) {
+                    return;
+                }
+
+                var touch = null;
+                for (var i = 0; i < e.touches.length; i++) {
+                    if (e.touches[i].identifier === self._touchIdentifier) {
+                        touch = e.touches[i];
+                        break;
+                    }
+                }
+                if (!touch) {
+                    return;
+                }
+
+                var x = touch.pageX - self.container.offsetLeft;
+                var walk = (x - self._dragStartX) * 1.5;
+                self.container.scrollLeft = self._dragStartScrollLeft - walk;
+                e.preventDefault();
+            }, { passive: false });
+
+            this.container.addEventListener('touchend', function() {
+                endDrag();
+            });
+
+            this.container.addEventListener('touchcancel', function() {
+                endDrag();
+            });
+
+            this.container.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+            });
+
+            this._dragBound = true;
+        },
+
+        load: function(force) {
+            if (!this.container || this.isLoading) {
+                return;
+            }
+
+            this.isLoading = true;
+            var self = this;
+
+            StateManager.cachedXHRGet('<%=luci.dispatcher.build_url("admin", "services", "openclash", "overwrite_subscribe_info")%>', function(x, status) {
+                self.isLoading = false;
+                if (x && x.status == 200 && status && status.status === 'success' && status.data) {
+                    self.data = status.data;
+                    self.render(status.data);
+                } else {
+                    self.render(null);
+                }
+            }, !!force);
+        },
+
+        getTypeClass: function(type) {
+            var normalizedType = String(type || '').toLowerCase();
+            if (normalizedType === 'http') return 'type-http';
+            if (normalizedType === 'file') return 'type-file';
+            return 'type-unknown';
+        },
+
+        parseModuleConfigList: function(configValue) {
+            if (!Array.isArray(configValue)) {
+                return [];
+            }
+            return configValue.map(function(item) {
+                return String(item || '').trim();
+            }).filter(function(item) {
+                return !!item;
+            });
+        },
+
+        isModuleForCurrentConfig: function(moduleInfo, currentConfigPath) {
+            var configList = this.parseModuleConfigList(moduleInfo ? moduleInfo.config : null);
+            if (!configList.length) {
+                return true;
+            }
+
+            if (configList.indexOf('all') !== -1) {
+                return true;
+            }
+
+            var fullPath = String(currentConfigPath || '').trim();
+            if (!fullPath) {
+                return false;
+            }
+
+            return configList.indexOf(fullPath) !== -1;
+        },
+
+        getEnabledModules: function(data) {
+            if (!data || typeof data !== 'object') {
+                return [];
+            }
+
+            var currentConfigPath = ConfigFileManager.getCurrentConfig() || ConfigFileManager.getSelectedConfig();
+
+            var modules = [];
+            for (var moduleName in data) {
+                if (!Object.prototype.hasOwnProperty.call(data, moduleName)) {
+                    continue;
+                }
+
+                var moduleInfo = data[moduleName] || {};
+                if (parseInt(moduleInfo.enable, 10) === 1 && this.isModuleForCurrentConfig(moduleInfo, currentConfigPath)) {
+                    modules.push({
+                        name: moduleName,
+                        type: moduleInfo.type || 'unknown',
+                        order: parseInt(moduleInfo.order, 10) || 0
+                    });
+                }
+            }
+
+            modules.sort(function(a, b) {
+                if (a.order === b.order) {
+                    return String(a.name).localeCompare(String(b.name));
+                }
+                return a.order - b.order;
+            });
+
+            return modules;
+        },
+
+        render: function(data) {
+            if (!this.container) return;
+
+            var enabledModules = this.getEnabledModules(data);
+            this.container.innerHTML = '';
+
+            if (enabledModules.length === 0) {
+                this.container.style.display = 'none';
+                this.updateDragScrollState();
+                return;
+            }
+
+            for (var i = 0; i < enabledModules.length; i++) {
+                var moduleItem = enabledModules[i];
+                var tag = document.createElement('span');
+                tag.className = 'subscription-overwrite-tag ' + this.getTypeClass(moduleItem.type);
+                tag.title = moduleItem.name;
+                tag.textContent = moduleItem.name;
+                if (moduleItem.type == 'http') {
+                    tag.title += ' [<%:HTTP Module%>]';
+                } else if (moduleItem.type == 'file') {
+                    tag.title += ' [<%:File Module%>]';
+                } else {
+                    tag.title += ' [<%:Unknown%>]';
+                }
+                this.container.appendChild(tag);
+            }
+
+            this.container.style.display = 'flex';
+            this.updateDragScrollState();
         }
     };
 
@@ -3489,9 +4011,9 @@
 
             StateManager.clearCache('<%=luci.dispatcher.build_url("admin", "services", "openclash", "startlog")%>');
 
-            if (DOMCache.oclog) {
+            if (DOMCache.oclog && initialMessage) {
                 DOMCache.oclog.style.display = 'inline-flex';
-                DOMCache.oclog.innerHTML = '<b style="color:var(--warning-color)">' + (initialMessage || '<%:Processing...%>') + '</b>';
+                DOMCache.oclog.innerHTML = '<b style="color:var(--tip-color)">' + initialMessage + '</b>';
             }
 
             this.isPolling = true;
@@ -3591,17 +4113,11 @@
 
         checkForErrors: function(log) {
             if (!log) return false;
-            if (log.match(/level=fatal|level=error|FTL \[Config]/)) {
+            if (log.match(/level=(fatal|error)/)) {
                 XHR.get('<%=luci.dispatcher.build_url("admin", "services", "openclash", "del_start_log")%>', null, function(x) {});
 
-                var errorMsg;
-                if (log.match(/level=(fatal|error)/)) {
-                    var msgParts = log.split('msg=');
-                    errorMsg = msgParts.length > 1 ? msgParts[1].replace(/"/g, '') : log;
-                } else { // FTL [Config]
-                    var ftlParts = log.split('FTL [Config] ');
-                    errorMsg = ftlParts.length > 1 ? ftlParts[1] : log;
-                }
+                var msgParts = log.split('msg=');
+                var errorMsg = msgParts.length > 1 ? msgParts[1].replace(/"/g, '') : log;
 
                 setTimeout(function() {
                     alert('<%:OpenClash Start Failed%>:\n\n' + errorMsg);
@@ -3621,6 +4137,7 @@
             var color = this.getLogColor(cleanLog);
             var displayText = this.formatLogText(cleanLog);
 
+            DOMCache.oclog.style.display = 'inline-flex';
             DOMCache.oclog.innerHTML = '<b style="color:' + color + '">' + displayText + '</b>';
         },
 
@@ -3629,19 +4146,13 @@
         },
 
         getLogColor: function(log) {
-            if (log.includes("Tip:") || log.includes("提示：")) {
-                return 'var(--warning-color)';
-            } else if (log.includes("Error:") || log.includes("错误：") || log.includes("level=error")) {
-                return 'var(--error-color)';
-            } else if (log.includes("Warning:") || log.includes("警告：") || log.includes("level=warning")) {
-                return 'var(--warning-log)';
-            } else if (log.includes("Watchdog:") || log.includes("守护程序：")) {
-                return 'var(--watch-log)';
-            } else if (log.match(/level=info|Success|Started|Ready/)) {
-                return 'var(--success-color)';
-            } else {
-                return 'var(--text-secondary)';
+            for (var levelKey in window.levelTranslations) {
+                var translatedText = '[' + window.levelTranslations[levelKey] + ']';
+                if (log.includes(translatedText)) {
+                    return "var(--" + levelKey + "-color)";
+                }
             }
+            return "var(--info-color)";
         },
 
         formatLogText: function(log) {
@@ -3695,12 +4206,12 @@
             StateManager.cachedXHRGet('<%=luci.dispatcher.build_url("admin", "services", "openclash", "toolbar_show_sys")%>', function(x, status) {
                 if (x && x.status == 200 && x.responseText != "") {
                     self.retryCount = 0;
-                    var cpuColor = status.cpu <= 50 ? "var(--success-color)" : (status.cpu <= 80 ? "var(--warning-color)" : "var(--error-color)");
+                    var cpuColor = status.cpu <= 50 ? "var(--success-color)" : (status.cpu <= 80 ? "var(--tip-color)" : "var(--error-color)");
                     var cpuValue = status.cpu <= 100 ? status.cpu + " %" : "0 %";
                     document.getElementById("cpu_t").innerHTML = "<font style=\"color:"+cpuColor+"\">"+cpuValue+"</font>";
 
                     var loadValue = parseFloat(status.load_avg) || 0;
-                    var loadColor = loadValue <= 50 ? "var(--success-color)" : (loadValue <= 80 ? "var(--warning-color)" : "var(--error-color)");
+                    var loadColor = loadValue <= 50 ? "var(--success-color)" : (loadValue <= 80 ? "var(--tip-color)" : "var(--error-color)");
                     document.getElementById("load_a").innerHTML = "<font style=\"color:"+loadColor+"\">"+status.load_avg+" %</font>";
                 } else {
                     self.handleError();
@@ -3782,12 +4293,12 @@
             ];
 
             if (!SystemStatusManager.isEnabled) {
-                var cpuColor = status.cpu <= 50 ? "var(--success-color)" : (status.cpu <= 80 ? "var(--warning-color)" : "var(--error-color)");
+                var cpuColor = status.cpu <= 50 ? "var(--success-color)" : (status.cpu <= 80 ? "var(--tip-color)" : "var(--error-color)");
                 var cpuValue = status.cpu <= 100 ? status.cpu + " %" : "0 %";
                 updates.push({element: document.getElementById("cpu_t"), content: "<font style=\"color:"+cpuColor+"\">"+cpuValue+"</font>"});
 
                 var loadValue = parseFloat(status.load_avg) || 0;
-                var loadColor = loadValue <= 50 ? "var(--success-color)" : (loadValue <= 80 ? "var(--warning-color)" : "var(--error-color)");
+                var loadColor = loadValue <= 50 ? "var(--success-color)" : (loadValue <= 80 ? "var(--tip-color)" : "var(--error-color)");
                 updates.push({element: document.getElementById("load_a"), content: "<font style=\"color:"+loadColor+"\">"+status.load_avg+" %</font>"});
             }
 
@@ -4029,7 +4540,12 @@
         DarkModeDetector.init();
         ConfigFileManager.init();
 
+        window.addEventListener('oc-overwrite-updated', function() {
+            OverwriteSubscribeManager.load(true);
+        });
+
         setTimeout(function() {
+            OverwriteSubscribeManager.init();
             SubscriptionManager.init();
         }, 300);
 
@@ -4143,19 +4659,13 @@
 
             if (status.clash && status.daip) {
                 if (!WSManager.hasActiveConnections()) {
-                    if (!WSManager._ws_error || WSManager._ws_retry < 3) {
-                        if (initializeWebSocketConnections(status)) {
-                            WSManager._ws_retry++;
-                        }
-                    } else {
-                        WSManager.enableFallbackMode();
-                    }
+                    initializeWebSocketConnections(status);
                 } else {
-                    if (NetworkStatsManager && NetworkStatsManager.isEnabled) {
+                    if (NetworkStatsManager.isEnabled) {
                         NetworkStatsManager.stop();
                     }
 
-                    if (SystemStatusManager && !SystemStatusManager.isEnabled) {
+                    if (!SystemStatusManager.isEnabled) {
                         SystemStatusManager.start();
                     }
                 }
@@ -4232,14 +4742,14 @@
         var isChineseUser = userLang.indexOf('zh') === 0;
 
         var tips = [
-            '<%:Tip: You can modify the profile on the profile page (for content that is not taken over)%>',
-            '<%:Tip: do not write configuration files? Try to create one click on the server page%>',
-            '<%:Tip: some website are abnormal? Try switching modes or using third-party rules%>',
-            '<%:Tip: using the fake IP mode can get a faster access experience%>',
-            '<%:Tip: the nameserver group must have at least one server set when using custom DNS%>',
-            '<%:Tip: after started, please wait patiently until the connection is normal%>',
-            '<%:Tip: if you don not use IPv6, please turn off the DHCP service of IPv6, otherwise the connection will be abnormal%>',
-            '<%:Tip: you can update the version in the settings page%>',
+            '<%:You can modify the profile on the profile page (for content that is not taken over)%>',
+            '<%:do not write configuration files? Try to create one click on the server page%>',
+            '<%:some website are abnormal? Try switching modes or using third-party rules%>',
+            '<%:using the fake IP mode can get a faster access experience%>',
+            '<%:the nameserver group must have at least one server set when using custom DNS%>',
+            '<%:after started, please wait patiently until the connection is normal%>',
+            '<%:if you don not use IPv6, please turn off the DHCP service of IPv6, otherwise the connection will be abnormal%>',
+            '<%:you can update the version in the settings page%>',
             '<%:Note: It is not recommended to enable IPv6 and related services for routing. Most of the network connection problems reported so far are related to it%>',
             '<%:Note: Turning on secure DNS in the browser will cause abnormal shunting, please be careful to turn it off%>',
             '<%:Note: Some software will modify the device HOSTS, which will cause abnormal shunt, please pay attention to check%>',
@@ -4505,12 +5015,6 @@
         }
     }
 
-    function ws_terror() {
-        WSManager._ws_error = true;
-
-        NetworkStatsManager.start();
-    }
-
     function ws_tmessage(event) {
         var dataObj = event && event.data !== undefined ? event.data : event;
         var data;
@@ -4757,7 +5261,7 @@
     }
 
     function telegrampage() {
-        url6 = 'https://t.me/ctcgfw_openwrt_discuss';
+        url6 = 'https://t.me/openclash_group';
         winOpen(url6);
     }
 
@@ -4938,7 +5442,7 @@
             }
         });
         return false;
-        }
+    }
 
     function copySecret() {
         var secret = StateManager.current_status.dase || '';
@@ -4969,6 +5473,10 @@
             var mixPort = StateManager.cached_proxy_info.mixed_port || '7893';
             var proxyIp = StateManager.current_status.daip;
             var proxyText = proxyIp + ':' + mixPort;
+            if (StateManager.cached_proxy_info.auth_user && StateManager.cached_proxy_info.auth_pass) {
+                proxyText = StateManager.cached_proxy_info.auth_user + ':' + StateManager.cached_proxy_info.auth_pass + '@' + proxyText;
+            }
+            proxyText = 'http://' + proxyText;
             copyToClipboard(proxyText, '<%:Mix proxy address copied:%> ');
         } else {
             alert('<%:Proxy info not available, please try again later%>');
@@ -5062,13 +5570,8 @@
                 client_href: currentUrl.href
             }, function(x, data) {
                 if (x && x.status == 200 && data.pac_url) {
-                    if (data.error && data.error.indexOf("warning:") === 0) {
-                        var warningMsg = data.error.replace("warning: ", "");
-                        var warningTranslations = {
-                            'No authentication configured, please be aware of the risk of information leakage!': '<%:No authentication configured, please be aware of the risk of information leakage!%>'
-                        };
-                        var translatedWarning = warningTranslations[warningMsg] || warningMsg;
-                        alert('<%:Warning:%> ' + translatedWarning);
+                    if (data.error && data.error !== "") {
+                        alert(data.error);
                     }
                     copyToClipboard(data.pac_url, '<%:PAC file URL copied:%> ');
                 } else if (data.error) {
@@ -5339,6 +5842,7 @@
         var filename = SubscriptionManager.extractFilename(currentConfig);
         localStorage.removeItem('sub_info_' + filename);
         SubscriptionManager.getSubscriptionInfo();
+        OverwriteSubscribeManager.load(true);
         return false;
     }
 
@@ -5392,11 +5896,11 @@
             filename: filename
         }, function(x, status) {
             if (x.status == 200) {
-                if (typeof ConfigUploader !== 'undefined' && ConfigUploader.showEditSubscribe) {
+                if (ConfigUploader && ConfigUploader.showEditSubscribe) {
                     ConfigUploader.showEditSubscribe(status, filename);
                 } else {
                     setTimeout(function() {
-                        if (typeof ConfigUploader !== 'undefined' && ConfigUploader.showEditSubscribe) {
+                        if (ConfigUploader && ConfigUploader.showEditSubscribe) {
                             ConfigUploader.showEditSubscribe(status, filename);
                         } else {
                             alert('<%:Config editor not ready, please try again%>');
@@ -5418,11 +5922,11 @@
             return false;
         }
 
-        if (typeof ConfigEditor !== 'undefined' && ConfigEditor.show) {
+        if (ConfigEditor.show) {
             ConfigEditor.show(currentConfig);
         } else {
             setTimeout(function() {
-                if (typeof ConfigEditor !== 'undefined' && ConfigEditor.show) {
+                if (ConfigEditor.show) {
                     ConfigEditor.show(currentConfig);
                 } else {
                     alert('<%:Config editor not ready, please try again%>');
@@ -5434,11 +5938,11 @@
     }
 
     function editOverwrite() {
-        if (typeof ConfigEditor !== 'undefined' && ConfigEditor.showOverwrite) {
+        if (ConfigEditor.showOverwrite) {
             ConfigEditor.showOverwrite();
         } else {
             setTimeout(function() {
-                if (typeof ConfigEditor !== 'undefined' && ConfigEditor.showOverwrite) {
+                if (ConfigEditor.showOverwrite) {
                     ConfigEditor.showOverwrite();
                 } else {
                     alert('<%:Config editor not ready, please try again%>');

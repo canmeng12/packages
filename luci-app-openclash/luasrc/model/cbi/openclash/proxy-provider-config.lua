@@ -3,8 +3,16 @@ local m, s, o
 local openclash = "openclash"
 local uci = luci.model.uci.cursor()
 local sys = require "luci.sys"
+local HTTP = require "luci.http"
+local DISP = require "luci.dispatcher"
 local sid = arg[1]
 local fs = require "luci.openclash"
+local file_path = fs.get_file_path_from_request()
+
+if not file_path then
+	HTTP.redirect(DISP.build_url("admin", "services", "openclash", "servers"))
+	return
+end
 
 font_red = [[<b style=color:red>]]
 font_off = [[</b>]]
@@ -24,9 +32,9 @@ end
 
 m = Map(openclash, translate("Edit Proxy-Provider"))
 m.pageaction = false
-m.redirect = luci.dispatcher.build_url("admin/services/openclash/servers")
+m.redirect = DISP.build_url("admin/services/openclash/servers") .. "?file=" .. HTTP.urlencode(file_path)
 if m.uci:get(openclash, sid) ~= "proxy-provider" then
-	luci.http.redirect(m.redirect)
+	HTTP.redirect(m.redirect)
 	return
 end
 
@@ -48,11 +56,6 @@ for t,f in ipairs(fs.glob("/etc/openclash/config/*"))do
 		end
 	end
 end
-
-o = s:option(Flag, "manual", translate("Custom Tag"))
-o.rmempty = false
-o.default = "0"
-o.description = translate("Mark as Custom Node to Prevent Retention config from being Deleted When Enabled")
 
 o = s:option(ListValue, "type", translate("Provider Type"))
 o.rmempty = true
@@ -158,12 +161,12 @@ function o.validate(self, value)
 end
 
 o = s:option(DynamicList, "groups", translate("Proxy Group (Support Regex)"))
-o.description = font_red..bold_on..translate("No Need Set when Config Create, The added Proxy Groups Must Exist")..bold_off..font_off
+o.description = font_red..bold_on..translate("The added Proxy Groups Must Exist")..bold_off..font_off
 o.rmempty = true
 o:value("all", translate("All Groups"))
 m.uci:foreach("openclash", "groups",
 		function(s)
-			if s.name ~= "" and s.name ~= nil then
+			if s.name ~= "" and s.name ~= nil and (s.config == m.uci:get(openclash, sid, "config") or s.config == "all") then
 				o:value(s.name)
 			end
 		end)
@@ -178,7 +181,7 @@ o.inputtitle = translate("Commit Settings")
 o.inputstyle = "apply"
 o.write = function()
 	m.uci:commit(openclash)
-	luci.http.redirect(m.redirect)
+	HTTP.redirect(m.redirect)
 end
 
 o = a:option(Button,"Back", " ")
@@ -186,7 +189,7 @@ o.inputtitle = translate("Back Settings")
 o.inputstyle = "reset"
 o.write = function()
 	m.uci:revert(openclash, sid)
-	luci.http.redirect(m.redirect)
+	HTTP.redirect(m.redirect)
 end
 
 m:append(Template("openclash/toolbar_show"))

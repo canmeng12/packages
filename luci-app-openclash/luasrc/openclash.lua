@@ -31,9 +31,11 @@ local fs	= require "nixio.fs"
 local nutil = require "nixio.util"
 local uci = require "luci.model.uci".cursor()
 local SYS  = require "luci.sys"
+local HTTP = require "luci.http"
 
 local type  = type
 local string  = string
+local tostring = tostring
 
 --- LuCI filesystem library.
 module "luci.openclash"
@@ -82,14 +84,43 @@ end
 -- @param filename	String containing the path of the file to read
 -- @return			String containing the file contents or nil on error
 -- @return			String containing the error message on error
-readfile = fs.readfile
+-- Wrapped readfile: if file is age-encrypted, try to decrypt with matching UCI secret first
+function readfile(filename)
+	local content, err = fs.readfile(filename)
+	if not content then return nil, err end
+	if content:find("BEGIN AGE ENCRYPTED FILE") then
+		local keys = get_age_keys(filename)
+		if keys and keys.secret and keys.secret ~= "" then
+			local dec = age_decrypt(keys.secret, content)
+			if dec and dec:find("BEGIN AGE ENCRYPTED FILE") == nil then
+				return dec
+			else
+				return content
+			end
+		else
+			return content
+		end
+	end
+	return content
+end
 
 --- Write the contents of given string to given file.
 -- @param filename	String containing the path of the file to read
 -- @param data		String containing the data to write
 -- @return			Boolean containing true on success or nil on error
 -- @return			String containing the error message on error
-writefile = fs.writefile
+-- Wrapped writefile: if public key exists for filename, encrypt before writing
+function writefile(filename, data)
+	local keys = get_age_keys(filename)
+	if keys and keys.public and keys.public ~= "" then
+		local enc = age_encrypt(keys.public, data)
+		if not enc then
+			return fs.writefile(filename, data)
+		end
+		return fs.writefile(filename, enc)
+	end
+	return fs.writefile(filename, data)
+end
 
 --- Copies a file.
 -- @param source	Source file
@@ -315,12 +346,15 @@ function get_resourse_mtime(path)
         end
     end
     local file = fs.readlink(real_path) or real_path
-    local model_version = os.date("%Y-%m-%d %H:%M:%S", mtime(real_path))
-    if model_version and model_version ~= "" then
-        return model_version
-    else
-        return "Unknown"
-    end
+	local resourse_etag_version = SYS.exec(string.format("source /usr/share/openclash/openclash_etag.sh && GET_ETAG_TIMESTAMP_BY_PATH '%s'", real_path))
+    if resourse_etag_version and resourse_etag_version ~= "" then
+		return resourse_etag_version
+	end
+	local resourse_version = os.date("%Y-%m-%d %H:%M:%S", mtime(real_path))
+	if resourse_version and resourse_version ~= "" then
+        return resourse_version
+	end
+    return "Unknown"
 end
 
 function uci_get_config(section, key)
@@ -332,4 +366,61 @@ function uci_get_config(section, key)
     	val = uci:get("openclash", section, key)
     end
     return val
+end
+
+function get_file_path_from_request()
+	local file_path
+	local referer = HTTP.getenv("HTTP_REFERER")
+	if referer then
+		local _, _, file_value = referer:find("file=([^&]*)$")
+		if file_value and file_value ~= "" then
+			file_path = HTTP.urldecode(file_value)
+		end
+	end
+
+	if not file_path or file_path == "/" then
+		file_path = HTTP.formvalue("file")
+		if not file_path then
+			file_path = HTTP.urldecode(file_path)
+		end
+	end
+
+	return file_path
+end
+
+function get_age_keys(filename)
+	local basename = fs.basename(filename or "") or ""
+	local basename_no_ext = basename:gsub('%.%w+$','')
+	local pub, sec
+	uci:foreach("openclash", "config_age_secret", function(s)
+		if s and s.name then
+			if s.name == basename or s.name == basename_no_ext then
+				if not pub and s.public then pub = s.public end
+				if not sec and s.secret then sec = s.secret end
+			end
+		end
+	end)
+	return { public = pub, secret = sec }
+end
+
+function age_decrypt(secret, content)
+	if not secret or secret == "" or not content then return nil end
+	local cmd = "cat <<'EOF' | /etc/openclash/core/clash_meta age decrypt " .. tostring(secret) .. " - - 2>/dev/null\n" .. content .. "\nEOF"
+	local fh = io.popen(cmd, 'r')
+	if not fh then return nil end
+	local out = fh:read('*a') or ''
+	fh:close()
+	if out and out ~= '' then return out end
+	return nil
+end
+
+function age_encrypt(public, content)
+	if not public or public == "" or not content then return nil end
+	local cmd = "cat <<'EOF' | /etc/openclash/core/clash_meta age encrypt " .. tostring(public) .. " - - 2>/dev/null\n" .. content .. "\nEOF"
+	local fh = io.popen(cmd, 'r')
+	if not fh then return nil end
+	local out = fh:read('*a') or ''
+	fh:close()
+	if out and out ~= '' then return out end
+	return nil
 end

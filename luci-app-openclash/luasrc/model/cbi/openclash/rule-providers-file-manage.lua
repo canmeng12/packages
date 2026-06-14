@@ -38,12 +38,11 @@ g.inputstyle="apply"
 Button.render(g,n,h)
 end
 btned1.write=function(h,n)
-	local file_path = "etc/openclash/rule_provider/" .. fs.basename(g[n].name)
-	HTTP.redirect(DISP.build_url("admin", "services", "openclash", "other-file-edit", "rule-providers-file-manage", "%s") %file_path)
+	local file_path = "/etc/openclash/rule_provider/" .. fs.basename(g[n].name)
+	HTTP.redirect(DISP.build_url("admin", "services", "openclash", "other-file-edit", "rule-providers-file-manage") .. "?file=" .. HTTP.urlencode(file_path))
 end
 
 btndl2 = tb2:option(Button,"download2",translate("Download Config"))
-btndl2.template="openclash/other_button"
 btndl2.render=function(m,n,h)
 m.inputstyle="remove"
 Button.render(m,n,h)
