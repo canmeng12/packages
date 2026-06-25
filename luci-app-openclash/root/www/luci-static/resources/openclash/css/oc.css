@@ -1,6 +1,6 @@
 /* ==========================================================================
  * OpenClash Combined Stylesheet
- * ==========================================================================
+ * ========================================================================== */
 
 /* ==========================================================================
  * SECTION 1: status.htm
@@ -1236,15 +1236,21 @@
     border-left-color: var(--primary-color);
 }
 
+.oc .config-file-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
 .oc .config-file-name {
     font-size: 20px;
     font-weight: 600;
     color: var(--text-primary);
-    flex: 1 1 0%;
     white-space: nowrap;
     text-overflow: ellipsis;
     min-width: 0;
-    max-width: 100%;
     overflow: hidden;
 }
 
@@ -1261,9 +1267,10 @@
     animation: gentlePulse 4s cubic-bezier(.17,.67,.83,.67) infinite;
 }
 
-.oc .config-file-name .age-file-icon {
-    display: inline-block;
-    vertical-align: middle;
+.oc .age-file-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
     color: var(--error-color);
 }
 
@@ -2136,6 +2143,54 @@
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* ==========================================================================
+ * SECTION: Usage Help Floating Button & Model (status.htm)
+ * ========================================================================== */
+.oc-usage-help-float {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--primary-color, #3b82f6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.oc-usage-help-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+.oc-usage-help-float:active {
+    transform: scale(0.95);
+}
+
+#usage-help-model .form-textarea {
+    background: var(--bg-gray, #f8f9fa);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 220px;
+    resize: vertical;
+}
+
+#usage-help-model .form-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .oc .form-textarea::placeholder {
@@ -5608,8 +5663,13 @@ ul {
 
 .btn-group {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    row-gap: 10px;
     width: 80%;
+    max-width: 600px;
     margin: 10px auto;
 }
 
