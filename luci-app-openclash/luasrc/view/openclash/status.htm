@@ -3022,23 +3022,18 @@
         function calculateAnimationDuration() {
             var bannerWidth = bannerElement.offsetWidth;
             var contentWidth = contentElement.offsetWidth;
-            var screenWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
             var refreshRate = window.screen && window.screen.refreshRate ? window.screen.refreshRate : 60;
             if (refreshRate <= 0) refreshRate = 60;
             if (refreshRate > 480) refreshRate = 480;
 
             var scrollDistance = contentWidth + bannerWidth;
 
-            var minWidth = 320;
-            var maxWidth = 3840;
-            var minSpeed = 80;
-            var maxSpeed = 350;
-            var clampedWidth = Math.min(maxWidth, Math.max(minWidth, screenWidth));
-            var targetVelocity = minSpeed + (maxSpeed - minSpeed) * (clampedWidth - minWidth) / (maxWidth - minWidth);
-
-            if (screenWidth <= 575) {
-                targetVelocity = targetVelocity * 0.9;
-            }
+            var minDistance = 400;
+            var maxDistance = 20000;
+            var minSpeed = 60;
+            var maxSpeed = 360;
+            var clampedDistance = Math.min(maxDistance, Math.max(minDistance, scrollDistance));
+            var targetVelocity = minSpeed + (maxSpeed - minSpeed) * (clampedDistance - minDistance) / (maxDistance - minDistance);
 
             var duration = (scrollDistance / targetVelocity) * 1000;
 
@@ -3048,7 +3043,7 @@
             }
             duration = duration * refreshRateMultiplier;
 
-            return Math.max(4000, Math.min(duration, 30000));
+            return Math.max(4000, Math.min(duration, 50000));
         }
 
         function updateScrollAnimation(duration) {
@@ -3211,7 +3206,7 @@
         var isChineseUser = (userLang.indexOf('zh') === 0);
         var bannerElement = document.getElementById('announcement-banner');
         var contentElement = document.getElementById('announcement-content');
-        var megaphoneSvg = document.getElementById('megaphone');  // 注意原代码中 id 为 megaphone
+        var megaphoneSvg = document.getElementById('megaphone');
 
         if (!bannerElement || !contentElement) return;
 
@@ -4321,8 +4316,17 @@
 
         buildPrompt: function() {
             var skillUrl = 'https://raw.githubusercontent.com/vernesong/OpenClash/dev/.github/skills/openclash-user-guide/SKILL.md';
-            var prompt = '<%:Please refer to the OpenClash Feature Usage Guide below to answer my question:%>\n\n';
-            prompt += '<%:[Source: OpenClash SKILL.md]%> ' + skillUrl + '\n\n';
+            var prompt = '<%:You are an OpenClash expert assistant. OpenClash is a LuCI plugin for OpenWrt that manages the Mihomo core.%>\n\n';
+            prompt += '<%:IMPORTANT — Before answering, you MUST fetch and read this authoritative reference guide. This is your primary knowledge source for all OpenClash questions:%>\n';
+            prompt += skillUrl + '\n\n';
+            prompt += '<%:This guide contains: complete dependency checklist, error message lookup tables with exact fixes, nftables/iptables firewall chain rules, all LuCI configuration options with UCI paths, DNS setup and leak prevention, subscription/GEO update procedures, and more.%>\n\n';
+            prompt += '<%:When answering my question about OpenClash, follow these rules:%>\n';
+            prompt += '1. <%:Always provide LuCI web UI navigation paths (e.g. Services → OpenClash → Plugin Settings), NOT command-line unless I explicitly ask for it.%>\n';
+            prompt += '2. <%:Explain underlying principles (firewall chains, YAML transformation logic) — not just click-here-click-there steps.%>\n';
+            prompt += '3. <%:Check dependency integrity first when troubleshooting — guide me to check dependencies from the System → Software page, or generate a debug log from Plugin Settings → Debug Log page.%>\n';
+            prompt += '4. <%:Never guess or fabricate information. If the reference guide does not cover something, actively query these external resources using web fetch / code search tools (in priority order): Mihomo Wiki (https://wiki.metacubex.one/config/), Meta-Docs (https://github.com/MetaCubeX/Meta-Docs), OpenClash source (https://github.com/vernesong/OpenClash/tree/dev), Mihomo core source (https://github.com/MetaCubeX/mihomo/tree/Alpha), Smart core source (https://github.com/vernesong/mihomo/tree/Alpha), or GitHub Issues (https://github.com/vernesong/OpenClash/issues). Fetch Wiki pages to read docs; search repos to find implementation code. Do NOT answer from memory — always verify against the actual source.%>\n';
+            prompt += '5. <%:Cite specific sources — mention which section of the reference guide or external resource your answer is based on.%>\n';
+            prompt += '6. <%:If my problem description is incomplete or lacks error messages, ask me to generate a debug log first (Plugin Settings → Debug Log → Generate) — do NOT speculate about the cause.%>\n\n';
             prompt += '<%:My question is:%>\n';
             return prompt;
         },
