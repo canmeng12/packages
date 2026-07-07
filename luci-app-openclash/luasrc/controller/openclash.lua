@@ -1423,7 +1423,12 @@ function action_refresh_log()
 end
 
 function action_del_log()
-	luci.sys.exec(": > /tmp/openclash.log")
+	local log_type = luci.http.formvalue("type")
+	if log_type == "debug" then
+		luci.sys.exec(": > /tmp/openclash_debug.log")
+	else
+		luci.sys.exec(": > /tmp/openclash.log")
+	end
 	return
 end
 
