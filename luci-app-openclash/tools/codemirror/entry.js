@@ -24,7 +24,7 @@ import {
 import {
     syntaxHighlighting, HighlightStyle, bracketMatching,
     foldGutter, indentOnInput, StreamLanguage, foldKeymap, indentUnit,
-    getIndentUnit, foldable
+    getIndentUnit, foldable, ensureSyntaxTree
 } from "@codemirror/language"
 
 // ---- Tags ----
@@ -467,7 +467,7 @@ function mihomoCompletion(context) {
     return { from: word.from, options, validFor: /^[\w-]*$/ }
 }
 
-function yamlLinter() {
+function yamlLinter(delay = 750) {
     return linter(view => {
         const diagnostics = []
         try { loadAll(view.state.doc.toString(), { schema: YAML11_SCHEMA }) } catch (e) {
@@ -484,7 +484,7 @@ function yamlLinter() {
             }
         }
         return diagnostics
-    })
+    }, typeof delay === 'number' ? { delay: delay } : undefined)
 }
 
 var _levelTagMap = null
@@ -563,6 +563,28 @@ const logHighlightStyle = HighlightStyle.define([
     { tag: logTag.levelWatchdog, class: "cmt-log-level-watchdog" },
 ])
 
+function syntaxPreload(buffer = 1000) {
+    return ViewPlugin.fromClass(class {
+        constructor(view) { this._preload(view) }
+        update(u) {
+            if (u.viewportChanged || u.docChanged) {
+                if (this._rafId) cancelAnimationFrame(this._rafId)
+                var self = this
+                this._rafId = requestAnimationFrame(function() {
+                    self._rafId = null
+                    self._preload(u.view)
+                })
+            }
+        }
+        _preload(view) {
+            var doc = view.state.doc
+            var ll = doc.lineAt(view.viewport.to).number
+            var target = Math.min(ll + buffer, doc.lines)
+            ensureSyntaxTree(view.state, doc.line(target).to, 50)
+        }
+    })
+}
+
 function baseExtensions(extra = []) {
     return [
         lineNumbers(), highlightActiveLine(), highlightActiveLineGutter(),
@@ -572,6 +594,7 @@ function baseExtensions(extra = []) {
         indentOnInput(), history(),
         highlightSelectionMatches(), EditorView.lineWrapping,
         closeBrackets(),
+        syntaxPreload(),
         cmKeymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, ...closeBracketsKeymap, ...foldKeymap, { key: 'Tab', run: function(v) { return acceptCompletion(v) || indentMore(v) } }]),
         ...extra
     ]
@@ -639,7 +662,7 @@ function _foldDepth1(state, lineNo, fl, ll, doc) {
     return d
 }
 
-function indentMarkerExtension({ highlightActiveBlock = true, hideFirstIndent = false, thickness = 1, colors } = {}) {
+function indentMarkerExtension({ highlightActiveBlock = true, hideFirstIndent = false, thickness = 1, colors, deferMode = 'raf', buffer = 1000 } = {}) {
     var extra = colors ? EditorView.baseTheme({
         '&light': { '--oc-im-c': colors.light || '#e1e4e8', '--oc-im-ca': colors.activeLight || '#d0d7de' },
         '&dark':  { '--oc-im-c': colors.dark  || '#30363d', '--oc-im-ca': colors.activeDark  || '#484f58' },
@@ -662,6 +685,19 @@ function indentMarkerExtension({ highlightActiveBlock = true, hideFirstIndent = 
                 var needsRebuild = u.docChanged || u.viewportChanged ||
                     (highlightActiveBlock && u.selectionSet)
                 if (needsRebuild) {
+                    if (deferMode === 'raf' && u.viewportChanged && !u.docChanged) {
+                        if (this._rafId) cancelAnimationFrame(this._rafId)
+                        var self = this
+                        this._rafId = requestAnimationFrame(function() {
+                            self._rafId = null
+                            self._stepPx = null
+                            self._measurePending = false
+                            self.decorations = self._build(u.view)
+                            self._scheduleMeasure(u.view)
+                        })
+                        return
+                    }
+                    if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null }
                     this._stepPx = null
                     this._measurePending = false
                     this.decorations = this._build(u.view)
@@ -745,7 +781,7 @@ function indentMarkerExtension({ highlightActiveBlock = true, hideFirstIndent = 
                 var doc = state.doc
                 var fl = doc.lineAt(view.viewport.from).number
                 var ll = doc.lineAt(view.viewport.to).number
-                var bl = Math.max(1, fl - 80), el = Math.min(doc.lines, ll + 80)
+                var bl = Math.max(1, fl - buffer), el = Math.min(doc.lines, ll + buffer)
 
                 var lvls = new Int32Array(el - bl + 1)
                 var bk = new Uint8Array(el - bl + 1)
@@ -864,6 +900,78 @@ const mergeDefaultConfig = {
 }
 
 // ============================================================
+// Merge scrollbar mirror — clones .cm-scroller scrollbar rules from
+// the active CM6 theme onto .cm-mergeView so the merge view
+// scrollbar matches the single-editor scrollbar exactly.
+// Also injects .cm-merge-revert button colours (theme-independent).
+// ============================================================
+function mirrorThemeScrollbar() {
+    var styles = document.querySelectorAll('style');
+    var mirrorCSS = '';
+    var themeStyle = null;
+
+    for (var i = 0; i < styles.length; i++) {
+        var text = styles[i].textContent || '';
+        if (text.indexOf('.cm-scroller::-webkit-scrollbar') === -1) continue;
+        themeStyle = styles[i];
+
+        var parts = [], m;
+
+        // Webkit pseudo-element rules:  ancestor .cm-scroller::-webkit-scrollbar...{body}
+        var reWebkit = /([^{}]*)\.cm-scroller(::-webkit-scrollbar[^{]*)\{([^}]*)\}/gi;
+        while ((m = reWebkit.exec(text)) !== null) {
+            parts.push('.cm-mergeView' + m[2] + '{' + m[3] + '}');
+        }
+
+        // Firefox scrollbar-width / scrollbar-color rules:  ancestor .cm-scroller{body}
+        var reFF = /([^{}]*)\.cm-scroller\{([^}]*scrollbar-(?:width|color)[^}]*)\}/gi;
+        while ((m = reFF.exec(text)) !== null) {
+            var body = m[2];
+            var sw = body.match(/scrollbar-width\s*:\s*[^;]+;?/);
+            var sc = body.match(/scrollbar-color\s*:\s*[^;]+;?/);
+            if (sw || sc) {
+                parts.push('.cm-mergeView{' + (sw ? sw[0] : '') + (sc ? sc[0] : '') + '}');
+            }
+        }
+
+        mirrorCSS = parts.join('');
+        break;
+    }
+
+    if (!themeStyle || !mirrorCSS) return;
+
+    var marker = '/*oc-merge-mirror*/';
+    var idx = themeStyle.textContent.indexOf(marker);
+    if (idx !== -1) {
+        themeStyle.textContent = themeStyle.textContent.substring(0, idx);
+    }
+
+    // 2. Revert button styles
+    var editorEl = document.querySelector('.cm-editor');
+    var contentEl = editorEl ? editorEl.querySelector('.cm-content') : null;
+    var cs = contentEl ? getComputedStyle(contentEl) : null;
+    var txt = cs ? cs.color : null;
+    var rgb = txt ? txt.match(/[\d.]+/g) : null;
+    var editorCS = editorEl ? getComputedStyle(editorEl) : null;
+    var bg = editorCS ? editorCS.backgroundColor : null;
+    var revertCSS;
+    if (rgb && rgb.length >= 3) {
+        var r = rgb[0], g = rgb[1], b = rgb[2];
+        var gutterBg = 'rgba(' + r + ',' + g + ',' + b + ',0.06)';
+        revertCSS =
+            '.cm-merge-revert{background:' + gutterBg + '}' +
+            '.cm-merge-revert button{color:rgba(' + r + ',' + g + ',' + b + ',0.5)}' +
+            '.cm-merge-revert button:hover{color:' + txt + ';background:rgba(' + r + ',' + g + ',' + b + ',0.12)}';
+    } else {
+        revertCSS =
+            '.cm-merge-revert button{color:#656d76}' +
+            '.cm-merge-revert button:hover{color:#1f2328;background:rgba(175,184,193,0.2)}';
+    }
+
+    themeStyle.textContent += marker + mirrorCSS + revertCSS;
+}
+
+// ============================================================
 // Theme compartment — allows dynamic light/dark switching
 // ============================================================
 const themeCompartment = new Compartment
@@ -876,6 +984,8 @@ function dispatchTheme(view, isDark) {
     view.dispatch({
         effects: themeCompartment.reconfigure(isDark ? githubDark : githubLight)
     })
+    // Mirror scrollbar rules into the new theme stylesheet
+    mirrorThemeScrollbar();
 }
 
 // ============================================================
@@ -981,8 +1091,8 @@ export {
     githubDark, githubLight,
     MergeView,
     logLanguage, logHighlightStyle,
-    baseExtensions, placeholderExtension, indentMarkerExtension,
-    topSearchExtension, mergeDefaultConfig,
+    baseExtensions, syntaxPreload, placeholderExtension, indentMarkerExtension,
+    topSearchExtension, mergeDefaultConfig, mirrorThemeScrollbar,
     themeExtension, dispatchTheme,
     switchHljsTheme,
     renderMarkdown,
