@@ -728,8 +728,6 @@
             this.stopHeartbeat(type);
 
             if (this._allowedCloseCodes.indexOf(event.code) === -1) {
-                // Unexpected close — core may have restarted, show log
-                LogManager.startLogDisplay();
                 this.scheduleReconnect(type);
             }
         },
@@ -761,6 +759,7 @@
         enableFallbackMode: function() {
             this._ws_connect = false;
             this.closeAll();
+            LogManager.startLogDisplay();
             if (!NetworkStatsManager.isEnabled) {
                 NetworkStatsManager.start();
             }
@@ -813,30 +812,78 @@
         loadConfigFileList: function(force) {
             this.updateSelectOptions([{value: '', text: '<%:Collecting data...%>', disabled: true}]);
 
-            StateManager.cachedXHRGet('<%=luci.dispatcher.build_url("admin", "services", "openclash", "config_file_list")%>', function(x, data) {
+            var params = {};
+            var cached = localStorage.getItem('oc_config_fp');
+            if (cached) {
+                try {
+                    var c = JSON.parse(cached);
+                    if (c && c.fp) {
+                        var ageCache = localStorage.getItem('oc_config_age');
+                        if (ageCache) {
+                            try {
+                                var a = JSON.parse(ageCache);
+                                if (a && a.fp === c.fp) params.fingerprint = c.fp;
+                            } catch (e) {}
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            StateManager.cachedXHRGetWithParams('<%=luci.dispatcher.build_url("admin", "services", "openclash", "config_file_list")%>', params, function(x, data) {
                 if (x && x.status == 200) {
-                    ConfigFileManager.handleConfigListResponse(data);
+                    ConfigFileManager.handleConfigListResponse(data, params.fingerprint);
                 } else {
                     ConfigFileManager.handleConfigListError();
                 }
             }, !!force);
         },
 
-        handleConfigListResponse: function(data) {
+        handleConfigListResponse: function(data, sentFp) {
             try {
                 var configFiles = [];
                 var currentConfigFile = '';
-                var currentFileInfo = null;
 
                 if (data.config_files && Array.isArray(data.config_files)) {
                     configFiles = data.config_files;
-                } else {
-                    configFiles = [];
                 }
 
                 if (data.current_config) {
                     currentConfigFile = data.current_config;
                 }
+
+                var fp = data.fingerprint;
+                var ageFromCache = false;
+                if (fp && sentFp && fp === sentFp) {
+                    var ageCache = localStorage.getItem('oc_config_age');
+                    if (ageCache) {
+                        try {
+                            var ac = JSON.parse(ageCache);
+                            if (ac && ac.fp === fp && ac.ages) {
+                                for (var j = 0; j < configFiles.length; j++) {
+                                    var fname = configFiles[j].name.replace(/\.(yaml|yml)$/i, '');
+                                    if (ac.ages.hasOwnProperty(fname)) {
+                                        configFiles[j].age = ac.ages[fname];
+                                    }
+                                }
+                                ageFromCache = true;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                if (fp && !ageFromCache) {
+                    var ages = {};
+                    for (var k = 0; k < configFiles.length; k++) {
+                        var fn = configFiles[k].name.replace(/\.(yaml|yml)$/i, '');
+                        ages[fn] = configFiles[k].age || false;
+                    }
+                    (window.requestIdleCallback || function(cb) { setTimeout(cb, 1); })(function() {
+                        localStorage.setItem('oc_config_fp', JSON.stringify({fp: fp}));
+                        localStorage.setItem('oc_config_age', JSON.stringify({fp: fp, ages: ages}));
+                    });
+                }
+
+                var currentFileInfo = null;
 
                 this.rawCurrentConfig = currentConfigFile;
                 this.configList = configFiles;
@@ -1421,7 +1468,7 @@
 
                         if (!needsErrorHandling) {
                             SubscriptionManager.retryCount = 0;
-                            setTimeout(function() { localStorage.setItem('sub_info_' + filename, JSON.stringify(status)); }, 0);
+                            (window.requestIdleCallback || function(cb) { setTimeout(cb, 1); })(function() { localStorage.setItem('sub_info_' + filename, JSON.stringify(status)); });
                             if (status.providers && status.providers.length === 0) {
                                 SubscriptionManager.showNoInfo();
                             }
@@ -1708,7 +1755,7 @@
                 if (this.currentConfigFile && status && status.providers) {
                     var errFilename = this.extractFilename(this.currentConfigFile);
                     if (errFilename) {
-                        setTimeout(function() { localStorage.setItem('sub_info_' + errFilename, JSON.stringify(status)); }, 0);
+                        (window.requestIdleCallback || function(cb) { setTimeout(cb, 1); })(function() { localStorage.setItem('sub_info_' + errFilename, JSON.stringify(status)); });
                     }
                 }
                 if (!status.providers || status.providers.length === 0) {
@@ -2016,7 +2063,7 @@
 
         startLogDisplay: function(initialMessage) {
             if (this.isPolling) {
-                this.stopLogDisplay();
+                return;
             }
             if (this.pollTimer) {
                 clearTimeout(this.pollTimer);
@@ -2882,6 +2929,7 @@
 
             if (status.clash && status.daip) {
                 if (!WSManager.hasActiveConnections()) {
+                    LogManager.startLogDisplay();
                     initializeWebSocketConnections(status);
                 } else {
                     if (NetworkStatsManager.isEnabled) {
