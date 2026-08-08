@@ -1,5 +1,5 @@
 <%
-local api = require "luci.passwall2.api"
+local api = require "luci.passwall.api"
 local appname = api.appname
 local uci = api.uci
 -%>
@@ -254,6 +254,16 @@ table td, .table .td {
 		);
 	}
 
+	function arraysEqual(a, b) {
+		if (a === b) return true;
+		if (a == null || b == null) return false;
+		if (a.length !== b.length) return false;
+		for (let i = 0; i < a.length; i++) {
+			if (a[i] !== b[i]) return false;
+		}
+		return true;
+	}
+
 	// List drag and rearrange
 	function initSortableForTable(table) {
 		if (!table) return null;
@@ -360,7 +370,7 @@ table td, .table .td {
 
 <div class="cbi-section">
 	<h3>Sing-Box/Xray <%:Shunt Rule%></h3>
-	<div class="cbi-section-descr"><a style="color: red;text-decoration: none"><%:Please note attention to the priority, the higher the order, the higher the priority.%></a></div>
+	<div class="cbi-section-descr"><a style="color: red"><%:Please note attention to the priority, the higher the order, the higher the priority.%></a></div>
 	<div id="shunt_rule_list"></div>
 </div>
 
