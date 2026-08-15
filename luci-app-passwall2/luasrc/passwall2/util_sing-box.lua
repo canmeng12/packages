@@ -683,6 +683,8 @@ function gen_outbound(flag, node, tag, proxy_table)
 end
 
 function gen_config_server(node)
+	local endpoints = {}
+	local inbounds = {}
 	local outbounds = {
 		{ type = "direct", tag = "direct" }
 	}
@@ -824,6 +826,12 @@ function gen_config_server(node)
 				if node.protocol == "hysteria2" then
 					u.name = user.username
 					u.password = user.password
+				end
+				if node.protocol == "wireguard" then
+					u.public_key = user.wireguard_public_key
+					u.pre_shared_key = user.wireguard_pre_shared_key
+					u.allowed_ips = user.allowed_ips or {}
+					u.persistent_keepalive_interval = 0
 				end
 				users[#users + 1] = u
 			end
@@ -992,6 +1000,18 @@ function gen_config_server(node)
 		end
 	end
 
+	if node.protocol == "wireguard" then
+		inbound.listen = nil
+		inbound.system = node.wireguard_system_interface == "1" and true or false
+		inbound.name = "sbwg_" .. node[".name"]
+		inbound.mtu = tonumber(node.wireguard_mtu or 1408)
+		inbound.address = node.wireguard_local_address
+		inbound.private_key = node.wireguard_private_key
+		if users then
+			inbound.peers = users
+		end
+	end
+
 	if node.protocol == "direct" then
 		protocol_table = {
 			network = (node.d_protocol ~= "TCP,UDP") and node.d_protocol or nil,
@@ -1004,6 +1024,13 @@ function gen_config_server(node)
 		for key, value in pairs(protocol_table) do
 			inbound[key] = value
 		end
+	end
+
+	if node.protocol == "wireguard" then
+		inbound.listen = nil
+		table.insert(endpoints, inbound)
+	else
+		table.insert(inbounds, inbound)
 	end
 
 	local route = {
@@ -1061,7 +1088,8 @@ function gen_config_server(node)
 				}
 			}
 		},
-		inbounds = { inbound },
+		endpoints = endpoints,
+		inbounds = inbounds,
 		outbounds = outbounds,
 		route = route
 	}
@@ -1116,6 +1144,7 @@ function gen_config(var)
 	local remote_dns_query_strategy = var["remote_dns_query_strategy"]
 	local remote_dns_fake = var["remote_dns_fake"]
 	local remote_dns_client_ip = var["remote_dns_client_ip"]
+	local remote_rewrite_ttl = var["remote_rewrite_ttl"] or "30"
 	local dns_cache = var["dns_cache"]
 	local tags = var["tags"]
 	local no_run = var["no_run"]
@@ -2026,7 +2055,7 @@ function gen_config(var)
 					end
 					if value.outboundTag ~= "block" and value.outboundTag ~= "direct" then
 						dns_rule.server = "remote"
-						dns_rule.rewrite_ttl = 30
+						dns_rule.rewrite_ttl = tonumber(remote_rewrite_ttl)
 						if true then
 							local block_rule
 							if remote_strategy == "ipv4_only" then
@@ -2073,11 +2102,25 @@ function gen_config(var)
 			end
 		end
 		if default_dns_flag == "remote" then
+			local block_rule
 			local dns_rule_query_type = { "A", "AAAA" }
 			if remote_strategy == "ipv4_only" then
+				block_rule = {
+					query_type = { "AAAA" },
+					action = "predefined",
+					rcode = "NOERROR"
+				}
 				dns_rule_query_type = { "A" }
 			elseif remote_strategy == "ipv6_only" then
+				block_rule = {
+					query_type = { "A" },
+					action = "predefined",
+					rcode = "NOERROR"
+				}
 				dns_rule_query_type = { "AAAA" }
+			end
+			if block_rule then
+				table.insert(dns.rules, block_rule)
 			end
 			if remote_dns_fake then
 				-- When default is not direct and enable fakedns, default DNS use FakeDNS.
@@ -2085,17 +2128,16 @@ function gen_config(var)
 					query_type = dns_rule_query_type,
 					server = fakedns_tag,
 					disable_cache = true,
-					rewrite_ttl = 30
+					rewrite_ttl = tonumber(remote_rewrite_ttl)
 				}
 				table.insert(dns.rules, fakedns_dns_rule)
-			else
-				local remote_dns_rule = {
-					query_type = dns_rule_query_type,
-					server = "remote",
-					disable_cache = true,
-				}
-				table.insert(dns.rules, remote_dns_rule)
 			end
+			local remote_dns_rule = {
+				server = "remote",
+				disable_cache = true,
+				rewrite_ttl = tonumber(remote_rewrite_ttl)
+			}
+			table.insert(dns.rules, remote_dns_rule)
 		end
 		local dns_in_inbound = {
 			type = "direct",
