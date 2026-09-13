@@ -4,7 +4,7 @@ Subject: [PATCH] mtwifi: add Linux 6.18 build compatibility
 Pass the legacy compiler flags through modern Kbuild, use kernel-owned
 headers and drop obsolete address-limit state.
 
-Signed-off-by: lean <chenlin@fnnas.com>
+Signed-off-by: coolsnowwolf <coolsnowwolf@gmail.com>
 ---
 --- a/mt_wifi_ap/Makefile
 +++ b/mt_wifi_ap/Makefile
