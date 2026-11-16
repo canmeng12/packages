@@ -28,14 +28,8 @@ msgstr "HTTP 请求延迟，仅供参考"
 msgid "Initial handshake time"
 msgstr "首次握手耗时"
 
-msgid "Kernel Unsupported"
-msgstr "内核不支持"
-
 msgid "Settings"
 msgstr "设置"
-
-msgid "Main Settings"
-msgstr "节点选择"
 
 msgid "Basic Settings"
 msgstr "基本设置"
@@ -67,9 +61,6 @@ msgstr "运行日志"
 msgid "Node Config"
 msgstr "节点配置"
 
-msgid "Shunt Policy Config"
-msgstr "分流方案配置"
-
 msgid "Running Status"
 msgstr "运行状态"
 
@@ -85,23 +76,14 @@ msgstr "GitHub 连接"
 msgid "YouTube Conn."
 msgstr "YouTube 连接"
 
-msgid "Node Check"
-msgstr "节点检测"
-
 msgid "Check..."
 msgstr "检测中..."
-
-msgid "Clear"
-msgstr "清除"
 
 msgid "Main switch"
 msgstr "主开关"
 
 msgid "Proxy Node"
 msgstr "代理节点"
-
-msgid "Edit Current Node"
-msgstr "编辑当前节点"
 
 msgid "Socks Config"
 msgstr "Socks 配置"
@@ -124,18 +106,6 @@ msgstr "0 为不使用"
 msgid "Current node: %s"
 msgstr "当前节点：%s"
 
-msgid "DNS Shunt"
-msgstr "DNS分流"
-
-msgid "Domestic group name"
-msgstr "国内分组名"
-
-msgid "You only need to configure domestic DNS packets in SmartDNS, and fill in the domestic DNS group name here."
-msgstr "您只需要在SmartDNS配置好国内DNS分组，并在此处填入国内DNS分组名。"
-
-msgid "%s cannot be empty."
-msgstr "%s 不能为空。"
-
 msgid "Filter Mode"
 msgstr "过滤模式"
 
@@ -147,9 +117,6 @@ msgstr "直连 DNS"
 
 msgid "Remote DNS"
 msgstr "远程 DNS"
-
-msgid "Resolver For The List Proxied"
-msgstr "解析被代理的域名列表"
 
 msgid "Requery DNS By %s"
 msgstr "通过 %s 请求 DNS"
@@ -184,9 +151,6 @@ msgstr "用于 DNS 查询时通知 DNS 服务器，客户端所在的地理位�
 msgid "This feature requires the DNS server to support the Edns Client Subnet (RFC7871)."
 msgstr "此功能需要 DNS 服务器支持 EDNS Client Subnet（RFC7871）。"
 
-msgid "The effect is better, recommend."
-msgstr "效果更好，推荐使用。"
-
 msgid "ChinaDNS-NG (recommended)"
 msgstr "ChinaDNS-NG (推荐)"
 
@@ -211,6 +175,9 @@ msgstr "智能，接受直连 DNS 空响应"
 msgid "Smart: Forward to both direct and remote DNS, if the direct DNS resolution result is a mainland China IP, then use the direct result, otherwise use the remote result."
 msgstr "智能：同时转发给直连和远程 DNS，如果直连 DNS 解析结果是大陆 IP，则使用直连结果，否则使用远程结果。"
 
+msgid "Auto: Prefer mainland China IPs returned by direct DNS and fall back to remote DNS when no usable result is available."
+msgstr "自动：优先使用直连 DNS 返回的大陆 IP，无可用结果时回退到远程 DNS。"
+
 msgid "In smart mode, no-ip reply from Direct DNS:"
 msgstr "使用智能模式，直连 DNS 返回空响应时:"
 
@@ -234,9 +201,6 @@ msgstr "适合让节点服务器获取目标域名的场景。"
 
 msgid "Such as: DNS unlocking of streaming media, reducing DNS query latency, etc."
 msgstr "例如：流媒体的 DNS 解锁、减少 DNS 查询延迟等。"
-
-msgid "Redirect"
-msgstr "重定向"
 
 msgid "DNS Redirect"
 msgstr "DNS 重定向"
@@ -301,26 +265,8 @@ msgstr "在主菜单中隐藏："
 msgid "Show in main menu:"
 msgstr "在主菜单中显示："
 
-msgid "DNS Export Of Multi WAN"
-msgstr "国内 DNS 指定解析出口"
-
-msgid "Node Export Of Multi WAN"
-msgstr "节点指定出口"
-
-msgid "Only support Multi Wan."
-msgstr "只有多线接入才有效。"
-
-msgid "Not Specify"
-msgstr "不指定"
-
 msgid "custom"
 msgstr "自定义"
-
-msgid "Process"
-msgstr "进程"
-
-msgid "1 Process"
-msgstr "单进程"
 
 msgid "Use %s"
 msgstr "使用 %s"
@@ -352,9 +298,6 @@ msgstr "中国列表以外"
 msgid "China List"
 msgstr "中国列表"
 
-msgid "Localhost"
-msgstr "本机"
-
 msgid "Switch Mode"
 msgstr "切换模式"
 
@@ -375,12 +318,6 @@ msgstr "缺少组件，透明代理不可用。"
 
 msgid "Want different devices to use different proxy modes/ports/nodes? Please use access control."
 msgstr "希望不同设备使用不同的代理模式/端口/节点？请使用访问控制。"
-
-msgid "Operation"
-msgstr "操作"
-
-msgid "Add Node"
-msgstr "添加节点"
 
 msgid "Add the node via the link"
 msgstr "通过链接添加节点"
@@ -409,14 +346,8 @@ msgstr "删除选择的节点"
 msgid "To Top"
 msgstr "置顶"
 
-msgid "Select"
-msgstr "选择"
-
 msgid "Selected:"
 msgstr "已选："
-
-msgid "DeSelect"
-msgstr "反选"
 
 msgid "Select all"
 msgstr "全选"
@@ -439,9 +370,6 @@ msgstr "应用为分流规则节点："
 msgid "Are you sure set this node?"
 msgstr "你确定要设置这个节点吗？"
 
-msgid "the server?"
-msgstr "服务器吗？"
-
 msgid "You choose node is:"
 msgstr "你选择的节点是："
 
@@ -450,9 +378,6 @@ msgstr "超时"
 
 msgid "Node Remarks"
 msgstr "节点备注"
-
-msgid "Add Mode"
-msgstr "添加方式"
 
 msgid "Drag to reorder"
 msgstr "拖动以重排"
@@ -575,12 +500,6 @@ msgstr "黑洞（屏蔽）"
 msgid "There are no available nodes, please add or subscribe nodes first."
 msgstr "没有可用节点，请先添加或订阅节点。"
 
-msgid "No shunt rules? Click me to go to add."
-msgstr "没有分流规则？点我前往去添加。"
-
-msgid "When using, localhost will connect this node first and then use this node to connect the default node."
-msgstr "当使用时，本机将首先连接到此节点，然后再使用此节点连接到默认节点落地。"
-
 msgid "Domain Strategy"
 msgstr "域名解析策略"
 
@@ -650,32 +569,11 @@ msgstr "代码错误，请协助捉虫："
 msgid "Faltal on set option, please help in debug:"
 msgstr "代码错误，请协助捉虫："
 
-msgid "Address"
-msgstr "地址"
-
 msgid "Address (Support Domain Name)"
 msgstr "地址（支持域名）"
 
-msgid "Trojan Verify Cert"
-msgstr "验证证书"
-
-msgid "Trojan Cert Path"
-msgstr "证书路径"
-
 msgid "Finger Print"
 msgstr "指纹伪造"
-
-msgid "Avoid using randomized, unless you have to."
-msgstr "避免使用 randomized , 除非你必须要。"
-
-msgid "Original"
-msgstr "原版"
-
-msgid "Transport Plugin"
-msgstr "传输层插件"
-
-msgid "Shadowsocks secondary encryption"
-msgstr "Shadowsocks 二次加密"
 
 msgid "Obfs Type"
 msgstr "混淆类型"
@@ -689,17 +587,8 @@ msgstr "认证类型"
 msgid "Auth Password"
 msgstr "认证密码"
 
-msgid "Client BBR Control"
-msgstr "客户端 BBR 流控"
-
 msgid "Commands the client to use the BBR flow control algorithm"
 msgstr "命令客户端使用 BBR 流量控制算法"
-
-msgid "PinSHA256"
-msgstr "PinSHA256"
-
-msgid "Certificate fingerprint"
-msgstr "证书指纹"
 
 msgid "Max upload Mbps"
 msgstr "最大上行（Mbps）"
@@ -731,12 +620,6 @@ msgstr "延迟启动"
 msgid "Encrypt Method"
 msgstr "加密方式"
 
-msgid "Encrypt Key"
-msgstr "加密密钥"
-
-msgid "Latency"
-msgstr "延迟"
-
 msgid "Automatic detection delay"
 msgstr "自动检测延迟"
 
@@ -755,12 +638,6 @@ msgstr "测试"
 msgid "Node num"
 msgstr "节点数量"
 
-msgid "Self add"
-msgstr "自添"
-
-msgid "Apply"
-msgstr "应用"
-
 msgid "Use"
 msgstr "使用"
 
@@ -778,9 +655,6 @@ msgstr "开机时延时启动"
 
 msgid "Units:seconds"
 msgstr "单位：秒"
-
-msgid "Units:minutes"
-msgstr "单位：分钟"
 
 msgid "stop automatically mode"
 msgstr "定时关闭模式"
@@ -863,14 +737,8 @@ msgstr "劫持ICMP (PING)"
 msgid "Hijacking ICMPv6 (IPv6 PING)"
 msgstr "劫持ICMPv6 (IPv6 PING)"
 
-msgid "Sniffing"
-msgstr "流量嗅探"
-
 msgid "TCP Proxy Way"
 msgstr "TCP 代理方式"
-
-msgid "Proxy Settings"
-msgstr "代理配置"
 
 msgid "Auto Switch"
 msgstr "自动切换"
@@ -883,9 +751,6 @@ msgstr "超时秒数"
 
 msgid "Timeout retry num"
 msgstr "超时重试次数"
-
-msgid "Main node"
-msgstr "主节点"
 
 msgid "List of backup nodes"
 msgstr "备用节点的列表"
@@ -904,9 +769,6 @@ msgstr "通过关键字删除备用节点列表的节点"
 
 msgid "Please enter the node keyword, pay attention to distinguish between spaces, uppercase and lowercase."
 msgstr "请输入节点关键字，注意区分空格、大写和小写。"
-
-msgid "Configure this node with 127.0.0.1: this port"
-msgstr "使用 127.0.0.1 和此端口配置节点"
 
 msgid "Enable Load Balancing"
 msgstr "开启负载均衡"
@@ -959,9 +821,6 @@ msgstr "节点地址"
 msgid "Node address cannot be empty."
 msgstr "节点地址不能为空。"
 
-msgid "Node Port"
-msgstr "节点端口"
-
 msgid "Node Weight"
 msgstr "负载比重"
 
@@ -997,9 +856,6 @@ msgstr "回滚中..."
 
 msgid "Update Options"
 msgstr "更新选项"
-
-msgid "Enable custom URL"
-msgstr "启用自定义规则地址"
 
 msgid "GFW domains(gfwlist) Update URL"
 msgstr "防火墙域名列表(gfwlist)更新URL"
@@ -1076,8 +932,8 @@ msgstr "从 Geo 文件生成规则"
 msgid "Generate rule lists such as GFW, China domains, and China IP ranges based on Geo files."
 msgstr "根据 Geo 文件生成规则列表，包括 GFW、中国域名和中国 IP 段等。"
 
-msgid "When manually updating with this option enabled, rules will be regenerated from existing Geo files even if no new version is available."
-msgstr "启用此选项后手动更新时,即使没有新版本也会从现有 Geo 文件重新生成规则。"
+msgid "GeoSite files without GFW rules cannot generate a GFW list (e.g. the original v2fly/Xray files)."
+msgstr "不含 GFW 规则的 GeoSite 文件无法生成 GFW 列表（如 v2fly/Xray 原版）。"
 
 msgid "Enable Geo Data Parsing"
 msgstr "开启 Geo 数据解析"
@@ -1099,9 +955,6 @@ msgstr "请注意优先级问题，排序越上面优先级越高。"
 
 msgid "This ID already exists."
 msgstr "该 ID 已存在。"
-
-msgid "Update..."
-msgstr "更新中"
 
 msgid "It is the latest version"
 msgstr "已是最新版本"
@@ -1139,20 +992,8 @@ msgstr "组件更新"
 msgid "if you want to run from memory, change the path, /tmp beginning then save the application and update it manually."
 msgstr "如果你希望从内存中运行，请更改路径，/tmp 开头，然后保存应用后，再手动更新。"
 
-msgid "Make sure there is enough space to install %s"
-msgstr "确保有足够的空间安装 %s"
-
-msgid "App Path"
-msgstr "程序路径"
-
 msgid "%s App Path"
 msgstr "%s 程序路径"
-
-msgid "%s Client App Path"
-msgstr "%s 客户端程序路径"
-
-msgid "alternate API URL for version checking"
-msgstr "用于版本检查的 API URL"
 
 msgid "GitHub Proxy"
 msgstr "GitHub 反代"
@@ -1184,17 +1025,11 @@ msgstr "请先保存并应用后再手动订阅。"
 msgid "Subscribe URL cannot be empty."
 msgstr "订阅网址不能为空。"
 
-msgid "Subscribe via proxy"
-msgstr "通过代理订阅"
-
 msgid "Update Once on Boot"
 msgstr "开机更新一次"
 
 msgid "Updates the subscription the first time PassWall runs automatically after each system boot."
 msgstr "路由每次启动后，首次自动运行 PassWall 时更新订阅。"
-
-msgid "Enable auto update subscribe"
-msgstr "开启自动更新订阅"
 
 msgid "Manual subscription"
 msgstr "手动订阅"
@@ -1280,9 +1115,6 @@ msgstr "隧道接口"
 msgid "Invalid interface name"
 msgstr "无效的接口名称"
 
-msgid "Use Interface With ACLs"
-msgstr "使用接口控制"
-
 msgid "Remarks"
 msgstr "备注"
 
@@ -1349,19 +1181,19 @@ msgstr "不是有效 IPv6 格式，请重新输入！"
 msgid "Not true format, please re-enter!"
 msgstr "不是正确的格式，请重新输入！"
 
-msgid "Plaintext: If this string matches any part of the targeting domain, this rule takes effet. Example: rule 'sina.com' matches targeting domain 'sina.com', 'sina.com.cn' and 'www.sina.com', but not 'sina.cn'."
+msgid "Plaintext: If this string matches any part of the targeting domain, this rule takes effect. Example: rule 'sina.com' matches targeting domain 'sina.com', 'sina.com.cn' and 'www.sina.com', but not 'sina.cn'."
 msgstr "纯字符串: 当此字符串匹配目标域名中任意部分，该规则生效。比如'sina.com'可以匹配'sina.com'、'sina.com.cn'和'www.sina.com'，但不匹配'sina.cn'。"
 
-msgid "Regular expression: Begining with 'regexp:', the rest is a regular expression. When the regexp matches targeting domain, this rule takes effect. Example: rule 'regexp:\\.goo.*\\.com$' matches 'www.google.com' and 'fonts.googleapis.com', but not 'google.com'."
+msgid "Regular expression: Beginning with 'regexp:', the rest is a regular expression. When the regexp matches targeting domain, this rule takes effect. Example: rule 'regexp:\\.goo.*\\.com$' matches 'www.google.com' and 'fonts.googleapis.com', but not 'google.com'."
 msgstr "正则表达式: 由'regexp:'开始，余下部分是一个正则表达式。当此正则表达式匹配目标域名时，该规则生效。例如'regexp:\\.goo.*\\.com$'匹配'www.google.com'、'fonts.googleapis.com'，但不匹配'google.com'。"
 
-msgid "Subdomain (recommended): Begining with 'domain:' and the rest is a domain. When the targeting domain is exactly the value, or is a subdomain of the value, this rule takes effect. Example: rule 'domain:v2ray.com' matches 'www.v2ray.com', 'v2ray.com', but not 'xv2ray.com'."
+msgid "Subdomain (recommended): Beginning with 'domain:' and the rest is a domain. When the targeting domain is exactly the value, or is a subdomain of the value, this rule takes effect. Example: rule 'domain:v2ray.com' matches 'www.v2ray.com', 'v2ray.com', but not 'xv2ray.com'."
 msgstr "子域名 (推荐): 由'domain:'开始，余下部分是一个域名。当此域名是目标域名或其子域名时，该规则生效。例如'domain:v2ray.com'匹配'www.v2ray.com'、'v2ray.com'，但不匹配'xv2ray.com'。"
 
-msgid "Full domain: Begining with 'full:' and the rest is a domain. When the targeting domain is exactly the value, the rule takes effect. Example: rule 'domain:v2ray.com' matches 'v2ray.com', but not 'www.v2ray.com'."
+msgid "Full domain: Beginning with 'full:' and the rest is a domain. When the targeting domain is exactly the value, the rule takes effect. Example: rule 'full:v2ray.com' matches 'v2ray.com', but not 'www.v2ray.com'."
 msgstr "完整匹配: 由'full:'开始，余下部分是一个域名。当此域名完整匹配目标域名时，该规则生效。例如'full:v2ray.com'匹配'v2ray.com'但不匹配'www.v2ray.com'。"
 
-msgid "Pre-defined domain list: Begining with 'geosite:' and the rest is a name, such as geosite:google or geosite:cn."
+msgid "Pre-defined domain list: Beginning with 'geosite:' and the rest is a name, such as geosite:google or geosite:cn."
 msgstr "预定义域名列表：由'geosite:'开头，余下部分是一个名称，如geosite:google或者geosite:cn。"
 
 msgid "Sing-Box is compatible with Geo rules and rule-set. rule-set begin with 'rule-set:remote:' or 'rule-set:local:'."
@@ -1370,7 +1202,7 @@ msgstr "Sing-Box 可兼容 Geo 规则和规则集，规则集由 'rule-set:remot
 msgid "Such as:"
 msgstr "例如："
 
-msgid "Annotation: Begining with #"
+msgid "Annotation: Beginning with #"
 msgstr "注释: 由 # 开头"
 
 msgid "Invert match result."
@@ -1403,9 +1235,6 @@ msgstr "TCP 封装 UDP"
 msgid "Connection Timeout"
 msgstr "连接超时时间"
 
-msgid "Local Port"
-msgstr "本地端口"
-
 msgid "Fast Open"
 msgstr "快速打开"
 
@@ -1432,15 +1261,6 @@ msgstr "混淆"
 
 msgid "Obfs_param"
 msgstr "混淆参数"
-
-msgid "Plugin Name"
-msgstr "插件名称"
-
-msgid "Plugin Arguments"
-msgstr "插件参数"
-
-msgid "User Level"
-msgstr "用户等级(level)"
 
 msgid "Transport"
 msgstr "传输方式"
@@ -1475,12 +1295,6 @@ msgstr "伪装域名"
 msgid "Camouflage Type"
 msgstr "伪装类型"
 
-msgid "Transport Layer Encryption"
-msgstr "传输层加密"
-
-msgid "Whether or not transport layer encryption is enabled, \"none\" for unencrypted, \"tls\" for using TLS, \"xtls\" for using XTLS."
-msgstr "是否启入传输层加密，支持的选项有 \"none\" 表示不加密，\"tls\" 表示使用 TLS，\"xtls\" 表示使用 XTLS。"
-
 msgid "Transfer mode"
 msgstr "传输模式"
 
@@ -1499,11 +1313,17 @@ msgstr "是否允许不安全连接。当勾选时，将跳过证书验证。"
 msgid "%s Node Use Type"
 msgstr "%s 节点使用类型"
 
+msgid "Other"
+msgstr "其他"
+
 msgid "UDP relay mode"
 msgstr "UDP 中继模式"
 
 msgid "Congestion control algorithm"
 msgstr "拥塞控制算法"
+
+msgid "Keep Alive"
+msgstr "保活间隔"
 
 msgid "Heartbeat interval(second)"
 msgstr "保活心跳包发送间隔（单位：秒）"
@@ -1525,12 +1345,6 @@ msgstr "身份认证"
 
 msgid "This username already exists."
 msgstr "该用户名已存在。"
-
-msgid "Node Number"
-msgstr "节点数量"
-
-msgid "You can only set up a maximum of %s nodes for the time being, Used for access control."
-msgstr "目前最多只能设置 %s 个节点，用于给访问控制使用。"
 
 msgid "Prefer firewall tools"
 msgstr "首选防火墙工具"
@@ -1586,18 +1400,6 @@ msgstr "接受局域网访问"
 msgid "When selected, it can accessed lan , this will not be safe!"
 msgstr "当勾选时，可以直接访问局域网，这将不安全！（非特殊情况不建议开启）"
 
-msgid "Enable Remote"
-msgstr "启用转发"
-
-msgid "You can forward to Nginx/Caddy/V2ray/Xray WebSocket and more."
-msgstr "您可以转发到 Nginx/Caddy/V2ray/Xray WebSocket 等。"
-
-msgid "Remote Address"
-msgstr "远程地址"
-
-msgid "Remote Port"
-msgstr "远程端口"
-
 msgid "as:"
 msgstr "如："
 
@@ -1652,6 +1454,27 @@ msgstr "启用节点日志"
 msgid "Log Level"
 msgstr "日志等级"
 
+msgid "Log Size"
+msgstr "日志大小"
+
+msgid "Enable WebUI"
+msgstr "启用 WebUI"
+
+msgid "Open WebUI"
+msgstr "打开 WebUI"
+
+msgid "WebUI Port"
+msgstr "WebUI 端口"
+
+msgid "WebUI Database Directory"
+msgstr "WebUI 数据库目录"
+
+msgid "WebUI Log Retention Days"
+msgstr "WebUI 日志保存天数"
+
+msgid "An absolute path without spaces is required."
+msgstr "请输入不含空格的绝对路径。"
+
 msgid "Not enabled log"
 msgstr "未启用日志"
 
@@ -1663,9 +1486,6 @@ msgstr "正常使用时建议关闭日志，以减少系统开销。"
 
 msgid "UDP Forward"
 msgstr "UDP 转发"
-
-msgid "DNS Settings"
-msgstr "DNS 设置"
 
 msgid "Null"
 msgstr "无"
@@ -1691,14 +1511,14 @@ msgstr "请指定下载地址。"
 msgid "File download failed or timed out: %s"
 msgstr "文件下载失败或超时：%s"
 
+msgid "File verification failed."
+msgstr "文件校验失败"
+
 msgid "File path required."
 msgstr "请指定文件路径。"
 
 msgid "%s not enough space."
 msgstr "%s 空间不足。"
-
-msgid "Can't find client in file: %s"
-msgstr "无法在文件中找到客户端：%s"
 
 msgid "Client file is required."
 msgstr "请指定客户端文件。"
@@ -1777,9 +1597,6 @@ msgstr "握手服务器端口"
 
 msgid "Override the connection destination address with the sniffed domain.<br />Otherwise use sniffed domain for routing only.<br />If using shunt nodes, configure the domain shunt rules correctly."
 msgstr "用探测出的域名覆盖连接目标地址。<br />否则仅将探测得到的域名用于路由。<br />如使用分流节点，请正确设置域名分流规则。"
-
-msgid "Override the connection destination address with the sniffed domain.<br />When enabled, traffic will match only by domain, ignoring IP rules.<br />If using shunt nodes, configure the domain shunt rules correctly."
-msgstr "用探测出的域名覆盖连接目标地址。<br />启用后仅使用域名进行流量匹配，将忽略IP规则。<br />如使用分流节点，请正确设置域名分流规则。"
 
 msgid "Protocol parameter. Will waste traffic randomly if enabled."
 msgstr "协议参数。如果启用会随机浪费流量。"
@@ -1909,6 +1726,9 @@ msgstr "如果节点地址是域名，则将使用此 DNS 进行解析。"
 
 msgid "Note: For node-specific DNS only. Keep Auto to avoid extra overhead."
 msgstr "注意：仅用于节点专用 DNS，通常请保持自动，以免增加开销。"
+
+msgid "Note: Auto tries to extract node DNS from Clash subscriptions. Disable skips extraction."
+msgstr "注意：自动尝试提取 Clash 订阅中的节点 DNS，禁用则不提取。"
 
 msgid "Enable Happy Eyeballs"
 msgstr "启用 Happy Eyeballs"
@@ -2189,3 +2009,63 @@ msgstr "自定义 HTTP 请求头"
 
 msgid "MASQUE Address"
 msgstr "MASQUE 隧道地址"
+
+msgid "WARP Device Private Key"
+msgstr "WARP 设备私钥"
+
+msgid "WARP Endpoint Public Key"
+msgstr "WARP 服务端公钥"
+
+msgid "Click to sort; click again to reverse. Press Save & Apply to keep the order."
+msgstr "点击表头排序，再次点击切换方向。按保存并应用可保留顺序。"
+
+msgid "Sort by type or protocol, then by name"
+msgstr "先按类型或协议排序，再按名称排序"
+
+msgid "Sort by server address and port"
+msgstr "按服务器地址和端口排序"
+
+msgid "Restore the saved order"
+msgstr "恢复已保存的顺序"
+
+msgid "The order changed on this page only. Press Save & Apply to store it on the router."
+msgstr "顺序仅在本页改变。按保存并应用才会写入路由器。"
+
+msgid "Saved order restored."
+msgstr "已恢复保存的顺序。"
+
+msgid "Automatic ping is still running (%d left). Sorting will run when it finishes."
+msgstr "自动探测仍在进行（剩余 %d）。结束后会立即排序。"
+
+msgid "Automatic ping did not finish within 2 minutes. Sorting was cancelled. Reload the page and try again."
+msgstr "自动探测在 2 分钟内未结束，已取消排序。请刷新页面后重试。"
+
+msgid "Filter:"
+msgstr "筛选："
+
+msgid "(empty)"
+msgstr "(空)"
+
+msgid "Word in remarks"
+msgstr "备注关键词"
+
+msgid "Address"
+msgstr "地址"
+
+msgid "search..."
+msgstr "搜索..."
+
+msgid "Show only rows that contain this text"
+msgstr "只显示包含此文本的行"
+
+msgid "Shown %s of %t"
+msgstr "显示 %s / %t"
+
+msgid "Reset"
+msgstr "重置"
+
+msgid "Show all rows"
+msgstr "显示全部行"
+
+msgid "The filter only hides rows on this page and changes nothing on the router. Select all skips hidden rows."
+msgstr "筛选只在本页隐藏行，不会改动路由器上的设置。全选会跳过隐藏行。"

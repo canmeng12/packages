@@ -63,15 +63,8 @@ function stretch()
 	if not _flag and dnsmasq_noresolv == "1" then
 		api.uci_del("dhcp", "@dnsmasq[0]", "noresolv")
 		local RESOLVFILE = "/tmp/resolv.conf.d/resolv.conf.auto"
-		local file = io.open(RESOLVFILE, "r")
-		if not file then
+		if (fs.stat(RESOLVFILE, "size") or 0) == 0 then
 			RESOLVFILE = "/tmp/resolv.conf.auto"
-		else
-			local size = file:seek("end")
-			file:close()
-			if size == 0 then
-				RESOLVFILE = "/tmp/resolv.conf.auto"
-			end
 		end
 		api.uci_set("dhcp", "@dnsmasq[0]", "resolvfile", RESOLVFILE)
 		api.uci_save(nil, "dhcp", true)
@@ -334,7 +327,7 @@ function add_rule(var)
 	end
 
 	local function get_dns_config_key()
-		local address_md5 = api.md5_string(sys.exec([[uci show passwall | grep -E '\.(address|download_address|domain_resolver_dns|domain_resolver_dns_https)=' | cut -d "'" -f 2 | sort -u]]))
+		local address_md5 = api.md5_string(sys.exec([[uci show passwall | grep -E '\.(address|download_address)=' | cut -d "'" -f 2 | sort -u]]))
 		local new_rules = sys.exec([[
 		for f in \
 			/usr/share/passwall/rules/chnlist \
@@ -462,10 +455,6 @@ function add_rule(var)
 				api.uci_foreach_c("nodes", function(t)
 					process_address(t.address)
 					process_address(t.download_address)
-					local dns, _ = api.get_domain_port_from_url(t.domain_resolver_dns or t.domain_resolver_dns_https or "")
-					if dns and dns ~= "" then
-						process_address(dns)
-					end
 				end)
 				log(string.format("  - 节点列表中的域名(vpslist)：%s", fwd_dns or "默认"))
 			end
@@ -772,7 +761,7 @@ function add_rule(var)
 			server_out:close()
 			ipset_out:close()
 		end
-		
+
 		if not GEO_SUCCESS then new_text = "" end
 		local f_out = io.open(CACHE_TEXT_FILE, "a")
 		f_out:write(new_text)

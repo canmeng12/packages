@@ -187,44 +187,36 @@ nft_rule_dual() {
 	nft "add rule $NFTABLE_NAME $chain_name $match_condition @${static_set} ${final_action}"
 }
 
+# Avoid terminal stdin or open-ended pipes to prevent hanging.
 insert_nftset() {
 	local nftset_name="${1}"; shift
-	local suffix=""
+	[ -n "$nftset_name" ] || return 0
 
-	if [ -n "$nftset_name" ] && { [ $# -gt 0 ] || [ ! -t 0 ]; }; then
-		{
-			if [ $# -gt 0 ] && [ $# -le 1000 ]; then
-				printf "%s\n" "$@"
-			elif [ $# -gt 1000 ]; then
-				printf "%s\n" "$*"
-			else
-				cat
-			fi | awk -v s="$suffix" -v n="$nftset_name" -v t="$NFTABLE_NAME" '
-				BEGIN {
-					RS = "[ \t\n\r]+"
-					ORS = ""
-				}
-				$0 != "" {
-					if (!first) {
-						printf "add element %s %s { \n", t, n
-						first = 1;
-					} else {
-						print ",\n"
-					}
-					print $0 s
-				}
-				END {
-					if (first) print "\n }\n"
-				}
-			'
-		} | nft -f -
-	fi
+	awk -v n="$nftset_name" -v t="$NFTABLE_NAME" '
+		BEGIN {
+			RS = "[ \t\n\r]+"
+			ORS = ""
+		}
+		$0 != "" {
+			if (!first) {
+				printf "add element %s %s { \n", t, n
+				first = 1
+			} else {
+				print ",\n"
+			}
+			printf " %s", $0
+		}
+		END {
+			if (first) {
+				print "\n }\n"
+			}
+		}' | nft -f -
 }
 
 gen_nftset() {
 	local nftset_name="${1}"; shift
 	local ip_type="${1}"; shift
-	#  0 - don't set defalut timeout
+	#  0 - don't set default timeout
 	local timeout_argument_set="${1}"; shift
 	local gc_interval_time="1h"
 
@@ -232,11 +224,8 @@ gen_nftset() {
 		if [ "$timeout_argument_set" = "0" ]; then
 			nft "add set $NFTABLE_NAME $nftset_name { type $ip_type; flags interval; auto-merge; }"
 		else
-			nft "add set $NFTABLE_NAME $nftset_name { type $ip_type; flags interval, timeout; timeout $timeout_argument_set; gc-interval $gc_interval_time; auto-merge; }"
+			nft "add set $NFTABLE_NAME $nftset_name { type $ip_type; flags interval, timeout; timeout $timeout_argument_set; gc-interval $gc_interval_time; }"
 		fi
-	fi
-	if [ $# -gt 0 ]; then
-		insert_nftset "$nftset_name" "$@"
 	fi
 }
 
@@ -311,7 +300,7 @@ load_acl() {
 			use_shunt_node=0
 			[ -n "$node" ] && [ "$(config_n_get $node protocol)" = "_shunt" ] && use_shunt_node=1
 
-			[ "${use_global_config}" = "1" ] && { 
+			[ "${use_global_config}" = "1" ] && {
 				if [ "$(config_get_type $NODE)" = "socks" ]; then
 					node_remark="Socks 配置($(config_n_get $NODE port) 端口)"
 				else
@@ -827,7 +816,7 @@ filter_vps_addr() {
 }
 
 filter_vpsip() {
-	local vps_addrs=$(uci show $CONFIG | grep -E "(\.address=|\.download_address=|\.domain_resolver_dns=|\.domain_resolver_dns_https=)" | cut -d "'" -f 2 | grep -Ev "$EXCLUDE_VPSIP")
+	local vps_addrs=$(uci show $CONFIG | grep -E "(\.address=|\.download_address=)" | cut -d "'" -f 2 | grep -Ev "$EXCLUDE_VPSIP")
 	local ipv4_addrs=$(echo "$vps_addrs" | grep -Eo "$IPv4_REGEX")
 	[ -n "$ipv4_addrs" ] && {
 		echo "$ipv4_addrs" | insert_nftset $NFTSET_VPS
@@ -867,7 +856,7 @@ filter_node() {
 	local address=$(config_n_get "$node" address)
 	local port=$(config_n_get "$node" port)
 	local hop=$(config_n_get "$node" hysteria2_hop)
-	[ -n "$hop" ] && port="${port:+$port,}$hop" 
+	[ -n "$hop" ] && port="${port:+$port,}$hop"
 	[ -z "$address" ] && return 1
 	echo "$address" | grep -Eq "$EXCLUDE_VPSIP" && return 1
 	[ -z "$port" ] && return 1
@@ -965,11 +954,12 @@ add_firewall_rule() {
 	add_script_mwan3
 	mwan3_start
 	set_tproxy_sysctl
-	gen_nftset $NFTSET_WAN ipv4_addr 0 
+	gen_nftset $NFTSET_WAN ipv4_addr 0
 	gen_nftset $NFTSET_VPS ipv4_addr 0
 	gen_nftset $NFTSET_GFW ipv4_addr "2d"
 	gen_nftset $NFTSET_LOCAL ipv4_addr 0
-	gen_nftset $NFTSET_LAN ipv4_addr 0 $(gen_lanlist)
+	gen_nftset $NFTSET_LAN ipv4_addr 0
+	gen_lanlist | insert_nftset $NFTSET_LAN
 	gen_nftset $NFTSET_CHN ipv4_addr "2d"
 	if [ -f $RULES_PATH/chnroute.nft ] && [ -s $RULES_PATH/chnroute.nft ] && [ $(awk 'END{print NR}' $RULES_PATH/chnroute.nft) -ge 8 ]; then
 		nft -f $RULES_PATH/chnroute.nft
@@ -986,11 +976,12 @@ add_firewall_rule() {
 	gen_nftset $NFTSET_SHUNT ipv4_addr "2d"
 	gen_nftset $NFTSET_SHUNT_STATIC ipv4_addr 0
 
-	gen_nftset $NFTSET_WAN6 ipv6_addr 0 
+	gen_nftset $NFTSET_WAN6 ipv6_addr 0
 	gen_nftset $NFTSET_VPS6 ipv6_addr 0
 	gen_nftset $NFTSET_GFW6 ipv6_addr "2d"
 	gen_nftset $NFTSET_LOCAL6 ipv6_addr 0
-	gen_nftset $NFTSET_LAN6 ipv6_addr 0 $(gen_lanlist_6)
+	gen_nftset $NFTSET_LAN6 ipv6_addr 0
+	gen_lanlist_6 | insert_nftset $NFTSET_LAN6
 	gen_nftset $NFTSET_CHN6 ipv6_addr "2d"
 	if [ -f $RULES_PATH/chnroute6.nft ] && [ -s $RULES_PATH/chnroute6.nft ] && [ $(awk 'END{print NR}' $RULES_PATH/chnroute6.nft) -ge 8 ]; then
 		#echolog "使用缓存加载chnroute6..."
@@ -1111,17 +1102,17 @@ add_firewall_rule() {
 
 	[ -n "$ISP_DNS" ] && {
 		#echolog "处理 ISP DNS 例外..."
-		echo "$ISP_DNS" | insert_nftset $NFTSET_WHITE
+		echo "$ISP_DNS" | insert_nftset $NFTSET_VPS
 		for ispip in $ISP_DNS; do
-			echolog "  - [$?]追加ISP IPv4 DNS到白名单：${ispip}"
+			echolog "  - [$?]追加ISP IPv4 DNS到nftset[$NFTSET_VPS]：${ispip}"
 		done
 	}
 
 	[ -n "$ISP_DNS6" ] && {
 		#echolog "处理 ISP IPv6 DNS 例外..."
-		echo $ISP_DNS6 | insert_nftset $NFTSET_WHITE6
+		echo "$ISP_DNS6" | insert_nftset $NFTSET_VPS6
 		for ispip6 in $ISP_DNS6; do
-			echolog "  - [$?]追加ISP IPv6 DNS到白名单：${ispip6}"
+			echolog "  - [$?]追加ISP IPv6 DNS到nftset[$NFTSET_VPS6]：${ispip6}"
 		done
 	}
 
@@ -1511,7 +1502,7 @@ add_firewall_rule() {
 
 del_firewall_rule() {
 	for nft in "dstnat" "srcnat" "nat_output" "mangle_prerouting" "mangle_output"; do
-        local handles=$(nft -a list chain $NFTABLE_NAME ${nft} 2>/dev/null | grep -E "PSW_" | awk -F '# handle ' '{print$2}')
+		local handles=$(nft -a list chain $NFTABLE_NAME ${nft} 2>/dev/null | grep -E "PSW_" | awk -F '# handle ' '{print$2}')
 		for handle in $handles; do
 			nft delete rule $NFTABLE_NAME ${nft} handle ${handle} 2>/dev/null
 		done
@@ -1557,6 +1548,11 @@ del_firewall_rule() {
 	destroy_nftset $NFTSET_BLACK6_STATIC
 	destroy_nftset $NFTSET_BLOCK6 $NFTSET_BLOCK6_STATIC
 	destroy_nftset $NFTSET_WHITE6 $NFTSET_WHITE6_STATIC
+
+	local nftset
+	for nftset in $(nft -t list table $NFTABLE_NAME 2>/dev/null | awk '$1 == "set" && $2 ~ /^psw_.+_shunt6?_static$/ {print $2}'); do
+		destroy_nftset "$nftset"
+	done
 
 	del_script_mwan3
 
@@ -1619,6 +1615,7 @@ stop() {
 		rm -rf $TMP_PATH2/singbox*
 		rm -rf $TMP_PATH2/dnsmasq*
 		rm -rf $TMP_PATH2/geo_output
+		rm -rf $TMP_PATH2/geodata
 		rm -rf $TMP_PATH2/user_rules
 	}
 	flush_include
@@ -1627,9 +1624,6 @@ stop() {
 arg1=$1
 shift
 case $arg1 in
-insert_nftset)
-	insert_nftset "$@"
-	;;
 filter_direct_node_list)
 	filter_direct_node_list
 	;;

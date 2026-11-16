@@ -27,7 +27,7 @@ s.type_name = type_name
 s.option_prefix = "singbox_"
 api.set_type_cbi(s)
 
-local singbox_tags = luci.sys.exec(singbox_bin .. " version  | grep 'Tags:' | awk '{print $2}'")
+local singbox_tags = api.get_singbox_tags()
 
 local local_version = api.get_app_version("sing-box"):match("[^v]+")
 local version_ge_1_14_0 = api.compare_versions(local_version, ">=", "1.14.0")
@@ -387,7 +387,7 @@ o.validate = function(self, value, t)
 	return nil
 end
 
-o = s:option(TextValue, "tls_certificate", "TLS Certificate (PEM)", translate("Full certificate (chain), PEM format."))
+o = s:option(TextValue, "tls_certificate", translate("TLS Certificate (PEM)"), translate("Full certificate (chain), PEM format."))
 o.default = ""
 o.rows = 5
 o.wrap = "off"
@@ -400,7 +400,7 @@ o.validate = function(self, value)
 	return value:gsub("\n", "\\n")
 end
 
-o = s:option(TextValue, "tls_key", "TLS Private Key (PEM)", translate("Private key in PEM format."))
+o = s:option(TextValue, "tls_key", translate("TLS Private Key (PEM)"), translate("Private key in PEM format."))
 o.default = ""
 o.rows = 5
 o.wrap = "off"

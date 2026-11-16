@@ -2701,13 +2701,6 @@ msgid ""
 msgstr ""
 "在线升级会从 fw876/helloworld 发布页下载并安装适配当前系统的 Mihomo IPK 或 APK 软件包。"
 
-#: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/component.htm:18
-msgid ""
-"The online upgrade downloads and installs the matching NaiveProxy package "
-"for this system from fw876/helloworld releases."
-msgstr ""
-"在线升级会从 fw876/helloworld 发布页下载并安装适配当前系统的 NaiveProxy 软件包。"
-
 #: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/clash_main_panel.htm:816
 #: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/clash_main_panel.htm:871
 #: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/clash_panel.htm:89
@@ -3291,10 +3284,6 @@ msgstr "mKCP 伪装（混淆）类型"
 #: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/component.htm:55
 msgid "mihomo binary not found in archive"
 msgstr "压缩包中未找到 mihomo 二进制文件"
-
-#: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/component.htm:56
-msgid "naive binary not found in archive"
-msgstr "压缩包中未找到 naive 二进制文件"
 
 #: applications/luci-app-ssr-plus/luasrc/model/cbi/shadowsocksr/client-config.lua:911
 msgid "native UDP characteristics"
@@ -3885,3 +3874,24 @@ msgstr "国内 IPv6 地址库更新地址"
 
 msgid "China IPv6 Data"
 msgstr "国内 IPv6 地址库"
+
+msgid "Naive HTTP/3 (QUIC)"
+msgstr "Naive HTTP/3（QUIC）"
+
+msgid "Naive UDP over TCP (server support required)"
+msgstr "Naive UDP over TCP（需要服务端支持）"
+
+msgid "Naive trusted CA certificate file"
+msgstr "Naive 信任的 CA 证书文件"
+
+msgid "Naive ECH config list (base64)"
+msgstr "Naive ECH 配置列表（Base64）"
+
+msgid "Naive transport"
+msgstr "Naive 传输协议"
+
+msgid "Enable UPnP/NAT-PMP"
+msgstr "启用 UPnP/NAT-PMP"
+
+msgid "Enable UPnP/NAT-PMP port mapping on your gateway to improve hole punching success."
+msgstr "在网关上启用 UPnP/NAT-PMP 端口映射以提升打洞成功率。"

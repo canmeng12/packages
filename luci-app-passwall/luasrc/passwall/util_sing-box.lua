@@ -362,16 +362,22 @@ function gen_outbound(flag, node, tag, proxy_table)
 					["User-Agent"] = node.user_agent
 				} or nil,
 			}
-			local path = api.UrlDecode(node.ws_path)
-			local path_dat = api.split(path, "?")
-			local params = {}
-			for _, v in pairs(api.split(path_dat[2], '&')) do
-				local t = api.split(v, '=')
+			local path, query = (node.ws_path or "/"):match("^(.-)%?(.*)$")
+			local params, query_params = {}, {}
+			for v in (query or ""):gmatch("[^&]+") do
+				local t = api.split(api.UrlDecode(v), '=')
 				params[t[1]] = t[2]
+				if t[1] ~= "ed" and t[1] ~= "eh" then
+					table.insert(query_params, v)
+				end
 			end
 			local ed = tonumber(params.ed)
 			if ed then
-				v2ray_transport.path = path_dat[1]
+				-- Consume early-data options while preserving the remaining query.
+				v2ray_transport.path = path
+				if #query_params > 0 then
+					v2ray_transport.path = path .. "?" .. table.concat(query_params, "&")
+				end
 				v2ray_transport.max_early_data = ed
 			end
 			v2ray_transport.early_data_header_name = params.eh or "Sec-WebSocket-Protocol"
@@ -501,6 +507,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 				pre_shared_key = node.wireguard_preSharedKey,
 				reserved = node.wireguard_reserved,
 				mtu = tonumber(node.wireguard_mtu),
+				persistent_keepalive_interval = tonumber(node.wireguard_keepAlive),
 			}
 		end
 
@@ -1430,22 +1437,24 @@ function gen_config(var)
 			end
 
 			local valid_nodes = {}
+			local valid_node_tags = {}
 			for i = 1, #(ut_nodes or {}) do
 				local ut_node_id = ut_nodes[i]
 				local ut_node_tag = "ut-" .. ut_node_id
-				local is_new_ut_node = true
+				local outboundTag
 				for _, outbound in ipairs(outbounds) do
 					if string.sub(outbound.tag, 1, #ut_node_tag) == ut_node_tag then
-						is_new_ut_node = false
-						valid_nodes[#valid_nodes + 1] = outbound.tag
+						outboundTag = outbound.tag
 						break
 					end
 				end
-				if is_new_ut_node then
-					local outboundTag = gen_outbound_get_tag(flag, ut_node_id, ut_node_tag, { fragment = singbox_settings.fragment == "1" or nil, record_fragment = singbox_settings.record_fragment == "1" or nil })
-					if outboundTag then
-						valid_nodes[#valid_nodes + 1] = outboundTag
-					end
+				if not outboundTag then
+					outboundTag = gen_outbound_get_tag(flag, ut_node_id, ut_node_tag, { fragment = singbox_settings.fragment == "1" or nil, record_fragment = singbox_settings.record_fragment == "1" or nil })
+				end
+				-- URLTest 组内的成员标签必须唯一，复用已有出站时也需要去重。
+				if outboundTag and not valid_node_tags[outboundTag] then
+					valid_node_tags[outboundTag] = true
+					valid_nodes[#valid_nodes + 1] = outboundTag
 				end
 			end
 			if #valid_nodes == 0 then return nil end
@@ -1692,8 +1701,21 @@ function gen_config(var)
 				local bin = api.finded_com("geoview")
 				if bin then
 					local geo_file = (api.uci_get_c("@global_rules[0]", "v2ray_location_asset") or "/usr/share/v2ray/"):match("^(.*)/") .. "/geosite.dat"
-					if luci.sys.call('"' .. bin .. '" -type geosite -input "' .. geo_file .. '" | grep -q "^GFW$"') == 0 then
-						domain_list = (domain_list == "") and "geosite:gfw" or domain_list .. "\ngeosite:gfw"
+					local gfw_rule
+					if sys.call('"' .. bin .. '" -type geosite -input "' .. geo_file .. '" 2>/dev/null | grep -q "^GFW$"') == 0 then
+						gfw_rule = "geosite:gfw"
+					elseif api.compare_versions(api.get_app_version("geoview"), ">=", "0.2.8") then
+						local output = GEO_VAR.TO_SRS_PATH .. "geosite-gfw.srs"
+						if not fs.access(output) then
+							fs.mkdirr(GEO_VAR.TO_SRS_PATH)
+							local cmd = string.format("%s -type geosite -action convert -input /usr/share/passwall/rules/gfwlist -list '*' -output %s -format srs",
+								api.util.shellquote(bin), api.util.shellquote(output))
+							if api.exec_call(cmd) ~= 0 then fs.unlink(output) end
+						end
+						gfw_rule = fs.access(output) and ("rule-set:local:" .. output) or nil
+					end
+					if gfw_rule then
+						domain_list = (domain_list == "") and gfw_rule or domain_list .. "\n" .. gfw_rule
 					end
 				end
 
@@ -2024,7 +2046,7 @@ function gen_config(var)
 		table.insert(dns.servers, remote_server)
 
 		fakedns_tag = "remote_fakeip"
-		if remote_dns_fake or inner_fakedns == "1" then		
+		if remote_dns_fake or inner_fakedns == "1" then
 			table.insert(dns.servers, {
 				tag = fakedns_tag,
 				type = "fakeip",
@@ -2165,7 +2187,7 @@ function gen_config(var)
 							local remote_dns_server = api.clone(remote_server)
 							remote_dns_server.tag = value.shunt_tag
 							local is_local = (remote_server.address and api.is_local_ip(remote_server.address)) or
-									 (remote_server.server and api.is_local_ip(remote_server.server))  --dns为本地ip，不走代理
+									(remote_server.server and api.is_local_ip(remote_server.server))  --dns为本地ip，不走代理
 							remote_dns_server.detour = is_local and "direct" or value.outboundTag
 							table.insert(dns.servers, remote_dns_server)
 							dns_rule.server = remote_dns_server.tag
@@ -2419,7 +2441,8 @@ function gen_config(var)
 								port = value.server_port,
 								public_key = value.peer_public_key,
 								pre_shared_key = value.pre_shared_key,
-								allowed_ips = {"0.0.0.0/0"},
+								allowed_ips = {"0.0.0.0/0", "::/0"},
+								persistent_keepalive_interval = value.persistent_keepalive_interval,
 								reserved = value.reserved
 							}
 						},

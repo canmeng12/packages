@@ -45,12 +45,10 @@ local function log(...)
 end
 
 local function is_file_nonzero(path)
-	if path and #path > 1 then
-		if sys.exec('[ -s "%s" ] && echo -n 1' % path) == "1" then
-			return true
-		end
+	if path and #path > 1 and (fs.stat(path, "size") or 0) > 0 then
+		return true
 	end
-	return nil
+	return false
 end
 
 local function insert_unique(dest_table, value, lookup_table)
@@ -196,10 +194,6 @@ if not is_file_nonzero(file_vpslist) then
 	api.uci_foreach_c("nodes", function(t)
 		process_address(t.address)
 		process_address(t.download_address)
-		local dns, _ = api.get_domain_port_from_url(t.domain_resolver_dns or t.domain_resolver_dns_https or "")
-		if dns and dns ~= "" then
-			process_address(dns)
-		end
 	end)
 	f_out:close()
 end
@@ -611,7 +605,7 @@ if CHNLIST == "proxy" then DEFAULT_TAG = "chn" end
 --全局模式，默认使用远程DNS
 if only_global then
 	DEFAULT_TAG = "gfw"
-	if NO_IPV6_TRUST == "1" and not IS_SHUNT_NODE then 
+	if NO_IPV6_TRUST == "1" and not IS_SHUNT_NODE then
 		table.insert(config_lines, "no-ipv6")
 	end
 end
