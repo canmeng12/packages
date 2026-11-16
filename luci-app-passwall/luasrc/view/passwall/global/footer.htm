@@ -5,18 +5,64 @@ local appname = map.config
 local sid = "@global[0]"
 -%>
 <style>
- #cbi-<%=appname%>-socks .td.cbi-value-field > div { 
+#cbi-<%=appname%>-socks .td.cbi-value-field > div {
 	white-space: nowrap;
-}
-@media (max-width: 1152px) {
-	 #cbi-<%=appname%>-socks .td.cbi-value-field > div {
-		white-space: normal;
-	}
 }
 
 @media screen and (max-width: 1152px) {
+	#cbi-<%=appname%>-socks .td.cbi-value-field > div {
+		white-space: normal;
+	}
+
+	/* Use the same narrow-screen table layout across themes. */
+	#cbi-<%=appname%>-socks .cbi-section-table,
+	#cbi-<%=appname%>-socks .cbi-section-table > tbody {
+		display: block;
+	}
+
 	#cbi-<%=appname%>-socks .cbi-section-table-titles {
 		display: none !important;
+	}
+
+	#cbi-<%=appname%>-socks .cbi-section-table-row {
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	#cbi-<%=appname%>-socks .cbi-section-table-row > .td {
+		display: block;
+		box-sizing: border-box;
+		margin: 0;
+		flex: 1 1 50%;
+		min-width: 0;
+		width: auto !important;
+		height: auto;
+	}
+
+	#cbi-<%=appname%>-socks .cbi-section-table-row > .td[data-title]::before {
+		content: attr(data-title);
+		display: block;
+	}
+
+	#cbi-<%=appname%>-socks .cbi-section-table-row > .td.cbi-section-actions {
+		flex: 1 1 100%;
+	}
+
+	#cbi-<%=appname%>-socks .cbi-value-field input:not([type="checkbox"], [type="radio"], [type="hidden"]),
+	#cbi-<%=appname%>-socks .cbi-value-field select {
+		box-sizing: border-box;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	/* Keep the enable column compact in mobile table cards. */
+	#cbi-<%=appname%>-socks .cbi-section-table-row > .td[data-name="enabled"] {
+		flex: 0 0 4.5em;
+	}
+
+	#cbi-<%=appname%>-socks .cbi-section-table-row > .td[data-name="node"] {
+		flex: 1 1 calc(100% - 4.5em);
+		min-width: 0;
 	}
 }
 </style>
@@ -68,13 +114,9 @@ local sid = "@global[0]"
 						socks.style.color = result.socks_status ? "green" : "red";
 					}
 					if (http) {
-						if (result.use_http) {
-							http.textContent = result.http_status ? "✓" : "X";
-							http.style.fontWeight = "bold";
-							http.style.color = result.http_status ? "green" : "red";
-						} else {
-							http.textContent = "";
-						}
+						http.textContent = result.http_status ? "✓" : "X";
+						http.style.fontWeight = "bold";
+						http.style.color = result.http_status ? "green" : "red";
 					}
 				}
 			);
@@ -150,7 +192,7 @@ local sid = "@global[0]"
 					html += '<a href="#" onclick="window.open(\'' + '<%=api.url("get_socks_log")%>?name=' + id.replace("cbi-<%=appname%>-", "") + '\', \'_blank\')"><%:Log%></a>';
 
 					node_select.insertAdjacentHTML("afterend",
-						'<div class="node-actions" style="display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap; margin-left:4px;">'  
+						'<div class="node-actions" style="display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap; margin-left:4px;">'
 						+ html + '</div>'
 					);
 				} catch(err) {
@@ -196,10 +238,9 @@ local sid = "@global[0]"
 			}
 			requestAnimationFrame(waitForDnsSelect);
 		};
-		waitForDnsSelect();
 
 		const initDnsSelect = (dns_select) => {
-			if (dns_select.value === "chinadns-ng") {
+			if (dns_select.value === "chinadns-ng" || dns_select.value === "smartdns") {
 				addLogLink(dns_select);
 			}
 			if (dns_select._dnsLogBinded) return;
@@ -210,7 +251,7 @@ local sid = "@global[0]"
 				if (existingLogLink) {
 					existingLogLink.remove();
 				}
-				if (dns_select.value === "chinadns-ng") {
+				if (dns_select.value === "chinadns-ng" || dns_select.value === "smartdns") {
 					addLogLink(dns_select);
 				}
 			});
@@ -225,9 +266,44 @@ local sid = "@global[0]"
 			logLink.href = "#";
 			logLink.className = "dns-log-link";
 			logLink.style.marginLeft = "10px";
-			logLink.setAttribute("onclick", "window.open('" + '<%=api.url("get_chinadns_log")%>' + "?flag=default', '_blank')");
+			const logUrl = select.value === "smartdns" ? '<%=api.url("get_smartdns_log")%>' : '<%=api.url("get_chinadns_log")%>?flag=default';
+			logLink.setAttribute("onclick", "window.open('" + logUrl + "', '_blank')");
 			select.insertAdjacentElement("afterend", logLink);
 		};
+
+		waitForDnsSelect();
+	})();
+
+	(function () {
+		function initSmartdnsDirectAuto() {
+			const field = document.getElementById("cbi-<%=appname%>-" + global_id + "-smartdns_direct_dns");
+			if (!field) return;
+
+			const update = () => {
+				const list = field.querySelector(".cbi-dynlist");
+				if (!list) return;
+				const hasDns = Array.from(list.querySelectorAll('.item > input[type="hidden"]'))
+					.some(input => input.value.trim() !== "");
+				const text = hasDns ? <%=api.jsonc.stringify(translate("-- Please choose --"))%> : "<%:Auto%>";
+				const placeholder = list.querySelector(".add-item .cbi-dropdown > ul > li[placeholder]");
+				// 只修改空选项的提示文字，不添加 DNS 条目，也不改变正在输入的内容。
+				if (placeholder && placeholder.textContent !== text) {
+					placeholder.textContent = text;
+				}
+				const input = list.querySelector('.add-item > input[type="text"]');
+				if (input) input.placeholder = hasDns ? "" : "<%:Auto%>";
+			};
+
+			// 同时处理 LuCI 延迟渲染，以及添加、删除 DNS 后的空列表状态。
+			new MutationObserver(update).observe(field, { childList: true, subtree: true });
+			update();
+		}
+
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", initSmartdnsDirectAuto, { once: true });
+		} else {
+			initSmartdnsDirectAuto();
+		}
 	})();
 	//]]>
 </script>

@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-passwall
-PKG_VERSION:=26.10.4
+PKG_VERSION:=26.11.11
 PKG_RELEASE:=1
 PKG_PO_VERSION:=$(PKG_VERSION)
 
@@ -15,6 +15,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_$(PKG_NAME)_Iptables_Transparent_Proxy \
 	CONFIG_PACKAGE_$(PKG_NAME)_Nftables_Transparent_Proxy \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Geoview \
+	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_SmartDNS \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Haproxy \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_Hysteria \
 	CONFIG_PACKAGE_$(PKG_NAME)_INCLUDE_NaiveProxy \
@@ -69,6 +70,11 @@ config PACKAGE_$(PKG_NAME)_Nftables_Transparent_Proxy
 config PACKAGE_$(PKG_NAME)_INCLUDE_Geoview
 	bool "Include Geoview"
 	select PACKAGE_geoview
+	default y if aarch64||arm||i386||x86_64
+
+config PACKAGE_$(PKG_NAME)_INCLUDE_SmartDNS
+	bool "Include SmartDNS"
+	select PACKAGE_smartdns
 	default y if aarch64||arm||i386||x86_64
 
 config PACKAGE_$(PKG_NAME)_INCLUDE_Haproxy
@@ -155,20 +161,6 @@ define Package/$(PKG_NAME)/conffiles
 /etc/config/passwall
 /etc/config/passwall_server
 /etc/passwall/
-endef
-
-define Package/$(PKG_NAME)/postinst
-#!/bin/sh
-rm -f $${IPKG_INSTROOT}/usr/share/passwall/rules/*.nft
-rm -rf $${IPKG_INSTROOT}/tmp/etc/passwall_tmp
-exit 0
-endef
-
-define Package/$(PKG_NAME)/postrm
-#!/bin/sh
-rm -f $${IPKG_INSTROOT}/usr/share/passwall/rules/*.nft
-rm -rf $${IPKG_INSTROOT}/tmp/etc/passwall_tmp
-exit 0
 endef
 
 include $(TOPDIR)/feeds/luci/luci.mk

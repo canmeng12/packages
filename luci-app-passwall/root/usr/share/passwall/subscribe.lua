@@ -60,99 +60,96 @@ local has_singbox = api.finded_com("sing-box")
 local has_xray = api.finded_com("xray")
 local has_hysteria2 = api.finded_com("hysteria")
 local DEFAULT_ALLOWINSECURE = true
-local DEFAULT_FILTER_KEYWORD_MODE = uci_get("@global_subscribe[0]", "filter_keyword_mode") or "0"
-local DEFAULT_FILTER_KEYWORD_DISCARD_LIST = uci_get("@global_subscribe[0]", "filter_discard_list") or {}
-local DEFAULT_FILTER_KEYWORD_KEEP_LIST = uci_get("@global_subscribe[0]", "filter_keep_list") or {}
+-- 展开 DynamicList 每行中的关键字，保留原有空格并忽略空项和重复项。
+local function split_filter_keywords(list)
+	local keywords, seen = {}, {}
+	if type(list) == "string" then list = {list} end
+	for _, row in ipairs(list or {}) do
+		for keyword in row:gmatch("[^|]+") do
+			if not seen[keyword] then
+				seen[keyword] = true
+				keywords[#keywords + 1] = keyword
+			end
+		end
+	end
+	return keywords
+end
+
+local DEFAULT_FILTER_KEYWORD = {
+	mode = uci_get("@global_subscribe[0]", "filter_keyword_mode") or "0",
+	discard_list = split_filter_keywords(uci_get("@global_subscribe[0]", "filter_discard_list")),
+	keep_list = split_filter_keywords(uci_get("@global_subscribe[0]", "filter_keep_list"))
+}
 -- 取节点使用core类型（节点订阅页面未设置时，自动取默认）
 local DEFAULT_SS_TYPE = api.get_core("ss_type", {{has_ss_rust,"shadowsocks-rust"},{has_singbox,"sing-box"},{has_xray,"xray"}})
 local DEFAULT_TROJAN_TYPE =  api.get_core("trojan_type", {{has_singbox,"sing-box"},{has_xray,"xray"}})
 local DEFAULT_VMESS_TYPE = api.get_core("vmess_type", {{has_xray,"xray"},{has_singbox,"sing-box"}})
 local DEFAULT_VLESS_TYPE = api.get_core("vless_type", {{has_xray,"xray"},{has_singbox,"sing-box"}})
 local DEFAULT_HYSTERIA2_TYPE = api.get_core("hysteria2_type", {{has_hysteria2,"hysteria2"},{has_singbox,"sing-box"},{has_xray,"xray"}})
+local DEFAULT_OTHER_TYPE = api.get_core("other_type", {{has_singbox,"sing-box"},{has_xray,"xray"}})
 local core_has = {
 	["xray"] = has_xray,
 	["sing-box"] = has_singbox,
 	["shadowsocks-rust"] = has_ss_rust,
 	["hysteria2"] = has_hysteria2
 }
--- 判断是否过滤节点关键字
-local function is_filter_keyword(sub_cfg, value)
-	local mode = DEFAULT_FILTER_KEYWORD_MODE
-	local discard_list = DEFAULT_FILTER_KEYWORD_DISCARD_LIST
-	local keep_list = DEFAULT_FILTER_KEYWORD_KEEP_LIST
-	if sub_cfg then
-		local filter_keyword_mode = sub_cfg.filter_keyword_mode or "5" -- 5 is global
-		if filter_keyword_mode == "0" then
-			mode = "0"
-		elseif filter_keyword_mode == "1" then
-			mode = "1"
-			discard_list = sub_cfg.filter_discard_list or {}
-		elseif filter_keyword_mode == "2" then
-			mode = "2"
-			keep_list = sub_cfg.filter_keep_list or {}
-		elseif filter_keyword_mode == "3" then
-			mode = "3"
-			keep_list = sub_cfg.filter_keep_list or {}
-			discard_list = sub_cfg.filter_discard_list or {}
-		elseif filter_keyword_mode == "4" then
-			mode = "4"
-			keep_list = sub_cfg.filter_keep_list or {}
-			discard_list = sub_cfg.filter_discard_list or {}
+-- 每个订阅只准备一次过滤配置，5 / 未设置时继承全局。
+local function prepare_keyword_filter(sub_cfg)
+	local mode = sub_cfg and sub_cfg.filter_keyword_mode
+	if mode == "0" or mode == "1" or mode == "2" or mode == "3" or mode == "4" then
+		return {
+			mode = mode,
+			discard_list = split_filter_keywords(sub_cfg.filter_discard_list),
+			keep_list = split_filter_keywords(sub_cfg.filter_keep_list)
+		}
+	end
+	return DEFAULT_FILTER_KEYWORD
+end
+
+local function match_filter_keywords(value, keywords)
+	for _, keyword in ipairs(keywords) do
+		if value:find(keyword, 1, true) then
+			return true
 		end
 	end
-	if mode == "1" then
-		for k,v in ipairs(discard_list) do
-			if value:find(v, 1, true) then
-				return true
-			end
-		end
-	elseif mode == "2" then
-		local result = true
-		for k,v in ipairs(keep_list) do
-			if value:find(v, 1, true) then
-				result = false
-			end
-		end
-		return result
-	elseif mode == "3" then
-		local result = false
-		for k,v in ipairs(discard_list) do
-			if value:find(v, 1, true) then
-				result = true
-			end
-		end
-		for k,v in ipairs(keep_list) do
-			if value:find(v, 1, true) then
-				result = false
-			end
-		end
-		return result
-	elseif mode == "4" then
-		local result = true
-		for k,v in ipairs(keep_list) do
-			if value:find(v, 1, true) then
-				result = false
-			end
-		end
-		for k,v in ipairs(discard_list) do
-			if value:find(v, 1, true) then
-				result = true
-			end
-		end
-		return result
+	return false
+end
+
+-- 节点解析出备注后，再按当前订阅的配置判断是否丢弃。
+local function is_filter_keyword(filter, value)
+	if filter.mode == "1" then
+		return match_filter_keywords(value, filter.discard_list)
+	elseif filter.mode == "2" then
+		return not match_filter_keywords(value, filter.keep_list)
+	elseif filter.mode == "3" then
+		return match_filter_keywords(value, filter.discard_list) and not match_filter_keywords(value, filter.keep_list)
+	elseif filter.mode == "4" then
+		return match_filter_keywords(value, filter.discard_list) or not match_filter_keywords(value, filter.keep_list)
 	end
 	return false
 end
 
 local nodeResult = {} -- update result
 local isDebug = false
+local log_buffer = nil
 
 local log = function(...)
-	if isDebug == true then
+	if log_buffer then
+		local n = select("#", ...)
+		tinsert(log_buffer, n == 1 and (...) or table.concat({...}, " "))
+	elseif isDebug == true then
 		local result = os.date("%Y-%m-%d %H:%M:%S: ") .. table.concat({...}, " ")
 		print(result)
 	else
 		api.log(...)
+	end
+end
+
+local function flush_log_buffer()
+	local buffered = log_buffer
+	log_buffer = nil
+	for _, msg in ipairs(buffered or {}) do
+		log(msg)
 	end
 end
 
@@ -249,6 +246,7 @@ do
 	if true then
 		local i = 0
 		local option = "lbss"
+		local usedNodes = {}
 		local function is_ip_port(str)
 			if type(str) ~= "string" then return false end
 			local ip, port = str:match("^([%d%.]+):(%d+)$")
@@ -257,9 +255,13 @@ do
 		uci_foreach("haproxy_config", function(t)
 			i = i + 1
 			local node_id = t[option]
+			-- 同一监听端口共用已选节点记录，避免多个后端替换成同一节点。
+			local port = t.haproxy_port or ""
+			usedNodes[port] = usedNodes[port] or {}
 			CONFIG[#CONFIG + 1] = {
 				log = true,
 				id = t[".name"],
+				usedNodes = usedNodes[port],
 				remarks = "HAProxy负载均衡节点列表[" .. i .. "]",
 				currentNode = node_id and uci_get(node_id) or nil,
 				set = function(o, server)
@@ -551,6 +553,19 @@ local function set_ss_implementation(ss_type, result)
 	return result
 end
 
+-- 拆分 URI 地址和端口，支持省略端口的 IPv6 地址，并去除路径。
+local function parse_host_port(host_port, default_port)
+	local authority = (host_port or ""):gsub("/.*$", "")
+	local address, port = authority:match("^%[([^%]]+)%]:(.*)$")
+	if not address then
+		address = authority:match("^%[([^%]]+)%]$")
+	end
+	if not address then
+		address, port = authority:match("^([^:]+):(.*)$")
+	end
+	return address or authority, (port and port ~= "") and port or default_port
+end
+
 -- 处理数据
 local function processData(szType, content, add_mode, group, sub_cfg)
 	--log(2, content, add_mode, group)
@@ -560,6 +575,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 	local sub_vmess_type = DEFAULT_VMESS_TYPE
 	local sub_vless_type = DEFAULT_VLESS_TYPE
 	local sub_hysteria2_type = DEFAULT_HYSTERIA2_TYPE
+	local sub_other_type = DEFAULT_OTHER_TYPE
 	local sub_hy_up_mbps, sub_hy_down_mbps = 1000, 1000
 	if sub_cfg then
 		if sub_cfg.allowInsecure and sub_cfg.allowInsecure ~= "1" then
@@ -584,6 +600,10 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 		local hysteria2_type = sub_cfg.hysteria2_type or "global"
 		if hysteria2_type ~= "global" and core_has[hysteria2_type] then
 			sub_hysteria2_type = hysteria2_type
+		end
+		local other_type = sub_cfg.other_type or "global"
+		if other_type ~= "global" and core_has[other_type] then
+			sub_other_type = other_type
 		end
 		sub_hy_up_mbps = sub_cfg.hysteria_up_mbps
 		sub_hy_down_mbps = sub_cfg.hysteria_down_mbps
@@ -612,7 +632,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 		result.protocol = hostInfo[#hostInfo-3]
 		result.method = hostInfo[#hostInfo-2]
 		result.obfs = hostInfo[#hostInfo-1]
-		result.password = base64Decode(hostInfo[#hostInfo])	
+		result.password = base64Decode(hostInfo[#hostInfo])
 		local params = {}
 		for _, v in pairs(split(dat[2], '&')) do
 			local s = v:find("=", 1, true)
@@ -646,17 +666,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 				info.security = (#id_info > 1 and id_info[1] ~= "") and id_info[1] or "auto"
 				info.id = id_info[#id_info]
 
-				local addr, port = sp[2], "443"
-				if api.is_ipv6addrport(addr) then
-					local a, p = addr:match("^%[(.+)%]:(%d+)$")
-					if a then addr, port = a, p end
-					addr = api.get_ipv6_only(addr)
-				else
-					local host_port = split(addr, ":")
-					addr = host_port[1]
-					if #host_port > 1 then port = host_port[#host_port] end
-				end
-				info.add, info.port = addr, port
+				info.add, info.port = parse_host_port(sp[2], "443")
 
 				local params = {}
 				for _, v in pairs(split(Info[2], '&')) do
@@ -699,7 +709,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 
 		if not info.net then info.net = "tcp" end
 		info.net = string.lower(info.net)
-		if result.type == "sing-box" and info.net == "raw" then 
+		if result.type == "sing-box" and info.net == "raw" then
 			info.net = "tcp"
 		elseif result.type == "Xray" and info.net == "tcp" then
 			info.net = "raw"
@@ -848,19 +858,8 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 		local hostInfo = split(base64Decode(UrlDecode(info)), "@")
 		if hostInfo and #hostInfo > 0 then
 			local host_port = hostInfo[#hostInfo]
-			-- [2001:4860:4860::8888]:443
-			-- 8.8.8.8:443
-			if host_port:find(":") then
-				local sp = split(host_port, ":")
-				result.port = sp[#sp]
-				if api.is_ipv6addrport(host_port) then
-					result.address = api.get_ipv6_only(host_port)
-				else
-					result.address = sp[1]
-				end
-			else
-				result.address = host_port
-			end
+			-- SIP002 要求显式端口，不设置缺省值。
+			result.address, result.port = parse_host_port(host_port)
 
 			local userinfo = nil
 			if #hostInfo > 2 then
@@ -880,20 +879,6 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 				password = hostInfo[1]  --一些链接用明文uuid做密码
 			end
 
-			-- 判断密码是否经过url编码
-			local function isURLEncodedPassword(pwd)
-				if not pwd:find("%%[0-9A-Fa-f][0-9A-Fa-f]") then
-					return false
-				end
-				local ok, decoded = pcall(UrlDecode, pwd)
-				return ok and UrlEncode(decoded) == pwd
-			end
-
-			local decoded = UrlDecode(password)
-			if isURLEncodedPassword(password) and decoded then
-				password = decoded
-			end
-
 			local _method = (method or "none"):lower()
 			method = (_method == "chacha20-poly1305" and "chacha20-ietf-poly1305") or
 				(_method == "xchacha20-poly1305" and "xchacha20-ietf-poly1305") or _method
@@ -901,6 +886,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 			result.method = method
 			result.ss_method = method
 			result.password = password
+			result.uot = params.uot
 			result.tcp_fast_open = params.tfo
 			result.use_finalmask = (params.fm and params.fm ~= "") and "1" or nil
 			result.finalmask = (params.fm and params.fm ~= "") and api.base64Encode(params.fm) or nil
@@ -965,7 +951,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 
 			if params.type then
 				params.type = string.lower(params.type)
-				if result.type == "sing-box" and params.type == "raw" then 
+				if result.type == "sing-box" and params.type == "raw" then
 					params.type = "tcp"
 				elseif result.type == "Xray" and params.type == "tcp" then
 					params.type = "raw"
@@ -1055,7 +1041,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 					end
 					local insecure = params.allowinsecure or params.allowInsecure or params.insecure
 					result.tls_allowInsecure = (insecure == "1" or insecure == "0") and insecure or (sub_allowinsecure and "1" or "0")
-					result.uot = params.udp
+					result.uot = params.uot or params.udp
 				else
 					result.error_msg = "请更换 Xray 或 Sing-Box 来支持 SS 更多的传输方式。"
 				end
@@ -1137,19 +1123,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 					params[v:sub(1, s - 1)] = UrlDecode(v:sub(s + 1))
 				end
 			end
-			-- [2001:4860:4860::8888]:443
-			-- 8.8.8.8:443
-			if host_port:find(":") then
-				local sp = split(host_port, ":")
-				port = sp[#sp]
-				if api.is_ipv6addrport(host_port) then
-					result.address = api.get_ipv6_only(host_port)
-				else
-					result.address = sp[1]
-				end
-			else
-				result.address = host_port
-			end
+			result.address, port = parse_host_port(host_port, port)
 			result.port = port
 
 			params.security = params.security or "tls"
@@ -1178,7 +1152,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 
 			if not params.type then params.type = "tcp" end
 			params.type = string.lower(params.type)
-			if result.type == "sing-box" and params.type == "raw" then 
+			if result.type == "sing-box" and params.type == "raw" then
 				params.type = "tcp"
 			elseif result.type == "Xray" and params.type == "tcp" then
 				params.type = "raw"
@@ -1286,26 +1260,14 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 					params[v:sub(1, s - 1)] = UrlDecode(v:sub(s + 1))
 				end
 			end
-			-- [2001:4860:4860::8888]:443
-			-- 8.8.8.8:443
-			if host_port:find(":") then
-				local sp = split(host_port, ":")
-				port = sp[#sp]
-				if api.is_ipv6addrport(host_port) then
-					result.address = api.get_ipv6_only(host_port)
-				else
-					result.address = sp[1]
-				end
-			else
-				result.address = host_port
-			end
+			result.address, port = parse_host_port(host_port, port)
 
 			if not params.type then params.type = "tcp" end
 			params.type = string.lower(params.type)
 			if ({ xhttp=true, kcp=true, mkcp=true })[params.type] and result.type ~= "Xray" and has_xray then
 				result.type = "Xray"
 			end
-			if result.type == "sing-box" and params.type == "raw" then 
+			if result.type == "sing-box" and params.type == "raw" then
 				params.type = "tcp"
 			elseif result.type == "Xray" and params.type == "tcp" then
 				params.type = "raw"
@@ -1436,22 +1398,10 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 		for _, v in pairs(split(query[2], '&')) do
 			local s = v:find("=", 1, true)
 			if s and s > 1 then
-				params[v:sub(1, s - 1)] = v:sub(s + 1)
+				params[v:sub(1, s - 1)] = UrlDecode(v:sub(s + 1))
 			end
 		end
-		-- [2001:4860:4860::8888]:443
-		-- 8.8.8.8:443
-		if host_port:find(":") then
-			local sp = split(host_port, ":")
-			result.port = sp[#sp]
-			if api.is_ipv6addrport(host_port) then
-				result.address = api.get_ipv6_only(host_port)
-			else
-				result.address = sp[1]
-			end
-		else
-			result.address = host_port
-		end
+		result.address, result.port = parse_host_port(host_port, "443")
 		result.hysteria_obfs = params.obfsParam
 		result.hysteria_auth_type = "string"
 		result.hysteria_auth_password = params.auth
@@ -1463,6 +1413,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 		result.hysteria_up_mbps = params.upmbps or sub_hy_up_mbps
 		result.hysteria_down_mbps = params.downmbps or sub_hy_down_mbps
 		result.hysteria_hop = params.mport
+		result.tls_CertByName = params.vcn
 
 	elseif szType == 'hysteria2' or szType == 'hy2' then
 		local alias = ""
@@ -1487,25 +1438,14 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 				params[v:sub(1, s - 1):lower()] = UrlDecode(v:sub(s + 1))
 			end
 		end
-		-- [2001:4860:4860::8888]:443
-		-- 8.8.8.8:443
-		if host_port:find(":") then
-			local sp = split(host_port, ":")
-			result.port = sp[#sp]
-			if api.is_ipv6addrport(host_port) then
-				result.address = api.get_ipv6_only(host_port)
-			else
-				result.address = sp[1]
-			end
-		else
-			result.address = host_port
-		end
+		result.address, result.port = parse_host_port(host_port, "443")
 		result.tls_serverName = params.sni
 		result.tls_pinSHA256 = params.pcs or params.pinsha256
 		result.tls_CertByName = params.vcn
 		result.hysteria2_up_mbps = params.upmbps or (sub_cfg and sub_hy_up_mbps or nil)
 		result.hysteria2_down_mbps = params.downmbps or (sub_cfg and sub_hy_down_mbps or nil)
 		result.hysteria2_hop = params.mport
+		result.hysteria2_hop_interval = params.hopinterval or params["hop-interval"]
 		if params.ech and params.ech ~= "" then
 			result.ech = "1"
 			result.ech_config = params.ech
@@ -1572,19 +1512,10 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 				params[v:sub(1, s - 1):lower()] = UrlDecode(v:sub(s + 1))
 			end
 		end
-		if host_port:find(":") then
-			local sp = split(host_port, ":")
-			result.port = sp[#sp]
-			if api.is_ipv6addrport(host_port) then
-				result.address = api.get_ipv6_only(host_port)
-			else
-				result.address = sp[1]
-			end
-		else
-			result.address = host_port
-		end
+		result.address, result.port = parse_host_port(host_port, "443")
 		result.tls_serverName = params.sni
 		result.tls_disable_sni = params.disable_sni
+		result.tls_CertByName = params.vcn
 		result.tls_pinSHA256 = params.pcs or params.pinsha256
 		result.tuic_alpn = params.alpn or "h3"
 		result.tuic_congestion_control = params.congestion_control or "cubic"
@@ -1621,19 +1552,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 					params[v:sub(1, s - 1):lower()] = UrlDecode(v:sub(s + 1))
 				end
 			end
-			-- [2001:4860:4860::8888]:443
-			-- 8.8.8.8:443
-			if host_port:find(":") then
-				local sp = split(host_port, ":")
-				port = sp[#sp]
-				if api.is_ipv6addrport(host_port) then
-					result.address = api.get_ipv6_only(host_port)
-				else
-					result.address = sp[1]
-				end
-			else
-				result.address = host_port
-			end
+			result.address, port = parse_host_port(host_port, port)
 			result.tls = "0"
 			if not params.security or params.security == "" then
 				params.security = "tls"
@@ -1682,13 +1601,13 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 			local contents = split(content, "@")
 			local auth = contents[1] or ""
 			local idx = auth:find(":", 1, true)
-			if not idx then --修正某些链接会把username和password之间的:进行编码
-				auth = UrlDecode(auth)
-				idx = auth:find(":", 1, true)
-			end
+			-- 先按明文冒号拆分，再分别解码；没有分隔符时整个 userinfo 是密码。
 			if idx then
 				result.username = UrlDecode(auth:sub(1, idx - 1))
 				result.password = UrlDecode(auth:sub(idx + 1))
+			else
+				result.username = ""
+				result.password = UrlDecode(auth)
 			end
 			Info = (contents[2] or ""):gsub("/%?", "?")
 		end
@@ -1701,17 +1620,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 				params[v:sub(1, s - 1)] = UrlDecode(v:sub(s + 1))
 			end
 		end
-		if host_port:find(":") then
-			local sp = split(host_port, ":")
-			result.port = sp[#sp]
-			if api.is_ipv6addrport(host_port) then
-				result.address = api.get_ipv6_only(host_port)
-			else
-				result.address = sp[1]
-			end
-		else
-			result.address = host_port
-		end
+		result.address, result.port = parse_host_port(host_port, "443")
 		result.tls_serverName = params.sni
 		result.uot = params.uot
 		result.naive_insecure_concurrency = params["insecure-concurrency"] or "0"
@@ -1755,20 +1664,7 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 				params[UrlDecode(v:sub(1, s - 1)):lower()] = UrlDecode(v:sub(s + 1))
 			end
 		end
-		-- [2001:4860:4860::8888]:443
-		-- 8.8.8.8:443
-		result.port = "443"
-		if host_port:find(":") then
-			local sp = split(host_port, ":")
-			result.port = sp[#sp]
-			if api.is_ipv6addrport(host_port) then
-				result.address = api.get_ipv6_only(host_port)
-			else
-				result.address = sp[1]
-			end
-		else
-			result.address = host_port
-		end
+		result.address, result.port = parse_host_port(host_port, "443")
 		result.snell_psk = params.psk or result.snell_psk
 		result.password = params.userkey
 		result.snell_version = params.version or "4"
@@ -1779,6 +1675,115 @@ local function processData(szType, content, add_mode, group, sub_cfg)
 			result.snell_mode = params.mode or "default"
 		end
 		result.snell_reuse = (params.reuse == "1") and "1" or "0"
+	elseif szType == "wireguard" then
+		if sub_other_type == "sing-box" and has_singbox then
+			result.type = "sing-box"
+		elseif sub_other_type == "xray" and has_xray then
+			result.type = "Xray"
+		else
+			log("跳过 WireGuard 节点，因未安装 WireGuard 核心程序 Xray 或 Sing-box。")
+			return nil
+		end
+		result.protocol = "wireguard"
+
+		local alias = ""
+		if content:find("#") then
+			local idx_sp = content:find("#")
+			alias = content:sub(idx_sp + 1, -1)
+			content = content:sub(0, idx_sp - 1)
+		end
+		result.remarks = UrlDecode(alias)
+		local contents = split(content, "@")
+		result.wireguard_secret_key = UrlDecode(contents[1]:gsub("%+", "%%2B"))
+		local query = split(contents[2], "%?")
+		local host_port = query[1]
+		local params = {}
+		for _, v in pairs(split(query[2], '&')) do
+			local s = v:find("=", 1, true)
+			if s and s > 1 then
+				params[UrlDecode(v:sub(1, s - 1)):lower()] = UrlDecode(v:sub(s + 1):gsub("%+", "%%2B"))
+			end
+		end
+		result.address, result.port = parse_host_port(host_port, "51820")
+		result.wireguard_public_key = params.publickey
+		result.wireguard_preSharedKey = params.presharedkey
+		result.wireguard_local_address = {}
+		for value in ((params.address or params.ip or "") .. "," .. (params.ipv6 or "")):gmatch("[^,%s]+") do
+			result.wireguard_local_address[#result.wireguard_local_address + 1] = value
+		end
+		result.wireguard_reserved = params.reserved
+		result.wireguard_mtu = params.mtu or "1420"
+		result.wireguard_keepAlive = params["persistent-keepalive"] or params.keepalive or "0"
+		result.use_finalmask = (params.fm and params.fm ~= "") and "1" or nil
+		result.finalmask = (params.fm and params.fm ~= "") and api.base64Encode(params.fm) or nil
+	elseif szType == "socks" or szType == "socks5" or szType == "socks5h" or szType == "http" or szType == "https" then
+		if sub_other_type == "sing-box" and has_singbox then
+			result.type = "sing-box"
+		elseif sub_other_type == "xray" and has_xray then
+			result.type = "Xray"
+		else
+			log("跳过 " .. szType .. " 节点，因未安装 " .. szType .. " 核心程序 Xray 或 Sing-box。")
+			return nil
+		end
+		result.protocol = (szType == "http" or szType == "https") and "http" or "socks"
+
+		local alias = ""
+		if content:find("#") then
+			local idx_sp = content:find("#")
+			alias = content:sub(idx_sp + 1, -1)
+			content = content:sub(0, idx_sp - 1)
+		end
+		result.remarks = UrlDecode(alias)
+		local query = split(content, "%?")
+		local Info = query[1]
+		local base64_auth = false
+		if result.protocol == "socks" and not Info:find("@", 1, true) and not Info:find(":", 1, true) then
+			Info = base64Decode(UrlDecode(Info:gsub("%+", "%%2B")))
+			base64_auth = true
+		end
+		local auth, host_port = Info:match("^(.*)@(.*)$")
+		host_port = host_port or Info
+		auth = auth or ""
+		if result.protocol == "socks" and not auth:find(":", 1, true) then
+			auth = base64Decode(UrlDecode(auth:gsub("%+", "%%2B")))
+			base64_auth = true
+		end
+		local idx = auth:find(":", 1, true)
+		result.username = idx and auth:sub(1, idx - 1) or auth
+		result.password = idx and auth:sub(idx + 1) or ""
+		if not base64_auth then
+			result.username = UrlDecode(result.username:gsub("%+", "%%2B"))
+			result.password = UrlDecode(result.password:gsub("%+", "%%2B"))
+		end
+		local params = {}
+		for _, v in pairs(split(query[2], '&')) do
+			local s = v:find("=", 1, true)
+			if s and s > 1 then
+				params[UrlDecode(v:sub(1, s - 1)):lower()] = UrlDecode(v:sub(s + 1):gsub("%+", "%%2B"))
+			end
+		end
+		local port = result.protocol == "socks" and "1080" or (szType == "https" and "443" or "80")
+		result.address, result.port = parse_host_port(host_port, port)
+		result.transport = result.type == "Xray" and "raw" or "tcp"
+		result.uot = params.uot
+		result.tcp_fast_open = params.tfo
+		result.tls = szType == "https" and "1" or "0"
+		if result.tls == "1" then
+			result.tls_serverName = params.sni
+			result.alpn = params.alpn
+			local insecure = params.allowinsecure or params.insecure or params.allow_insecure
+			result.tls_allowInsecure = (insecure == "1" or insecure == "0") and insecure or (sub_allowinsecure and "1" or "0")
+			result.tls_pinSHA256 = params.pcs
+			result.tls_CertByName = params.vcn
+			if params.fp and params.fp ~= "" then
+				result.utls = "1"
+				result.fingerprint = params.fp
+			end
+			if params.ech and params.ech ~= "" then
+				result.ech = "1"
+				result.ech_config = params.ech
+			end
+		end
 	else
 		log("暂时不支持 " .. szType .. " 类型的节点订阅，跳过此节点。")
 		return nil
@@ -1889,6 +1894,20 @@ end
 local function select_node(nodes, config, parentConfig)
 	if config.currentNode then
 		local server
+		if parentConfig and not parentConfig.usedNodes then parentConfig.usedNodes = {} end
+		local usedNodes = parentConfig and parentConfig.usedNodes or config.usedNodes
+		local current_id = config.currentNode[".name"] or config.currentNode.Socks
+		-- 已用于替换其他旧节点的候选节点，不再参与本列表的匹配。
+		if usedNodes then
+			local available_nodes = {}
+			for _, node in pairs(nodes) do
+				local used_by = usedNodes[node[".name"]]
+				if not used_by or used_by == current_id then
+					available_nodes[#available_nodes + 1] = node
+				end
+			end
+			nodes = available_nodes
+		end
 		-- 全局节点、acl节点、负载均衡、urltest中的 (Socks [端口]) 节点保持原id
 		if config.currentNode["Socks"] then
 			server = config.currentNode.Socks
@@ -1985,7 +2004,7 @@ local function select_node(nodes, config, parentConfig)
 				end
 			end
 		end
-		if not parentConfig then
+		if not parentConfig and not usedNodes then
 			-- 还不行 随便找一个
 			if not server then
 				if #nodes_table > 0 then
@@ -1997,11 +2016,15 @@ local function select_node(nodes, config, parentConfig)
 			end
 		end
 		if server then
+			if usedNodes then usedNodes[server] = current_id end
 			if parentConfig then
 				config.set(parentConfig, server)
 			else
 				config.set(config, server)
 			end
+		elseif usedNodes and config.delete then
+			-- HAProxy 没有剩余匹配节点时，删除失效引用。
+			config.delete(config)
 		end
 	else
 		if not parentConfig then
@@ -2010,10 +2033,29 @@ local function select_node(nodes, config, parentConfig)
 	end
 end
 
+-- 账户信息只在实际变化时写回，由调用方统一提交。
+local function update_subscribe_info()
+	local changed = {}
+	for cfgid, info in pairs(subscribe_info) do
+		for key, value in pairs(info) do
+			value = value and value ~= "" and value or nil
+			if uci_get(cfgid, key) ~= value then
+				if value then
+					uci_set(cfgid, key, value)
+				else
+					uci_del(cfgid, key)
+				end
+				changed[cfgid] = true
+			end
+		end
+	end
+	return changed
+end
+
 local function update_node(manual)
 	if next(nodeResult) == nil then
 		log("没有可用的节点信息更新。")
-		return
+		return false
 	end
 
 	local group = {}
@@ -2069,12 +2111,12 @@ local function update_node(manual)
 					end
 					-- sing-box/xray 节点域名解析
 					if kkk == "type" and (vvv == "Xray" or vvv == "sing-box") then
-						if domain_resolver then
+						if domain_resolver and domain_resolver ~= "" and domain_resolver ~= "disable" then
 							uci_set(cfgid, "domain_resolver", domain_resolver)
-							if domain_resolver_dns then
-								uci_set(cfgid, "domain_resolver_dns", domain_resolver_dns)
-							elseif domain_resolver_dns_https then
+							if domain_resolver == "https" and domain_resolver_dns_https then
 								uci_set(cfgid, "domain_resolver_dns_https", domain_resolver_dns_https)
+							elseif (domain_resolver == "udp" or domain_resolver == "tcp") and domain_resolver_dns then
+								uci_set(cfgid, "domain_resolver_dns", domain_resolver_dns)
 							end
 						end
 						if domain_strategy then
@@ -2098,22 +2140,11 @@ local function update_node(manual)
 							uci_set(cfgid, "chain_proxy", "3")
 							uci_set(cfgid, "outbound_iface", outbound_iface_group)
 						end
-					end		
+					end
 				end
 			end
 		end
 	end
-	-- 更新机场信息
-	for cfgid, info in pairs(subscribe_info) do
-		for key, value in pairs(info) do
-			if value ~= "" then
-				uci_set(cfgid, key, value)
-			else
-				uci_del(cfgid, key)
-			end
-		end
-	end
-
 	if next(CONFIG) then
 		local nodes = {}
 		uci_foreach("nodes", function(node)
@@ -2135,9 +2166,7 @@ local function update_node(manual)
 		end
 	end
 
-	uci_save(true)
-
-	if manual ~= 1 then restart_required = true end
+	return true
 end
 
 local function parse_link(raw, add_mode, group, sub_cfg)
@@ -2146,6 +2175,7 @@ local function parse_link(raw, add_mode, group, sub_cfg)
 		if sub_cfg then
 			cfgid = sub_cfg[".name"]
 		end
+		local keyword_filter = add_mode == "2" and prepare_keyword_filter(sub_cfg)
 		local nodes, szType
 		local node_list = {}
 		-- SSD 似乎是这种格式 ssd:// 开头的
@@ -2202,7 +2232,8 @@ local function parse_link(raw, add_mode, group, sub_cfg)
 							log('丢弃节点：' .. result.remarks .. " ，原因：" .. result.error_msg)
 						elseif not result.type then
 							log('丢弃节点：' .. result.remarks .. " ，找不到可使用二进制。")
-						elseif (add_mode == "2" and is_filter_keyword(sub_cfg, result.remarks)) or not result.address or result.remarks == "NULL" or result.address == "127.0.0.1" or
+							-- 过滤无效物理网络节点（回环、全零等非网络出站卡片）
+						elseif (add_mode == "2" and is_filter_keyword(keyword_filter, result.remarks)) or not result.address or result.remarks == "NULL" or result.address == "127.0.0.1" or result.address == "0.0.0.0" or
 								(not datatypes.hostname(result.address) and not (api.is_ip(result.address))) then
 							log('丢弃过滤节点：' .. result.type .. ' 节点，' .. result.remarks)
 						else
@@ -2220,17 +2251,21 @@ local function parse_link(raw, add_mode, group, sub_cfg)
 			end
 		end
 		if #node_list > 0 then
-			nodeResult[#nodeResult + 1] = {
-				remark = group,
-				list = node_list,
-				sub_cfg = sub_cfg
-			}
+			if add_mode ~= "2" then
+				nodeResult[#nodeResult + 1] = {
+					remark = group,
+					list = node_list,
+					sub_cfg = sub_cfg
+				}
+			end
 		end
 		log('成功解析【' .. group .. '】节点数量：' .. #node_list)
+		return node_list
 	else
 		if add_mode == "2" then
 			log('获取到的【' .. group .. '】订阅内容为空，可能是订阅地址无效，或是网络问题，请诊断！')
 		end
+		return {}
 	end
 end
 
@@ -2281,15 +2316,47 @@ local execute = function()
 					local stdout = f:read("*all")
 					f:close()
 					local raw_data = api.trim(stdout)
+					local auto_dns = value.domain_resolver == nil or value.domain_resolver == ""
+					local resolver
+					raw_data, resolver = parseClashNode(raw_data, remark, auto_dns)
+					if auto_dns and resolver then
+						-- Only enrich this run's sub_cfg; keep the subscription's Auto setting.
+						value.domain_resolver = resolver.domain_resolver
+						value.domain_resolver_dns = resolver.domain_resolver_dns
+						value.domain_resolver_dns_https = resolver.domain_resolver_dns_https
+					end
+					-- 优先提取标准 Clash 订阅响应头中的账户用量与到期时间（不受节点变化与否影响）
+					if headers and headers ~= "" then
+						subscribe_info[cfgid] = parse_clash_sub_info(headers)
+					end
+					-- 开启日志事务缓冲：前置解析期间日志暂存，未变更时静默丢弃，避免定时任务刷屏
+					log_buffer = {}
+					local parsed_nodes = parse_link(raw_data, "2", remark, value)
 					local old_md5 = value.md5 or ""
-					local new_md5 = api.md5_file(tmp_file)
+					local md5_content = jsonStringify(parsed_nodes)
+					if value.domain_resolver and value.domain_resolver ~= "" and value.domain_resolver ~= "disable" then
+						local protocol = value.domain_resolver
+						local dns = (protocol == "udp" or protocol == "tcp") and value.domain_resolver_dns or ""
+						local doh = protocol == "https" and value.domain_resolver_dns_https or ""
+						md5_content = md5_content .. jsonStringify({protocol, dns or "", doh or ""})
+					end
+					local new_md5 = #parsed_nodes > 0 and api.md5_string(md5_content) or ""
+					-- 节点集合和最终生效的 DNS 都未变化时，跳过节点重写与服务重启。
 					if not manual_sub and new_md5 ~= "" and old_md5 == new_md5 then
+						log_buffer = nil -- 无物理变动，直接丢弃暂存的丢弃与计数明细
 						log('订阅:【' .. remark .. '】没有变化，无需更新。')
 					else
-						raw_data = parseClashNode(raw_data)
-						subscribe_info[cfgid] = parse_clash_sub_info(headers)
-						parse_link(raw_data, "2", remark, value)
-						uci_set(cfgid, "md5", new_md5)
+						-- 节点发生变动时，回放前置解析期间的节点统计与丢弃日志
+						flush_log_buffer()
+						-- 暂存有效节点及其 MD5，完成节点更新后再一起写入配置。
+						if #parsed_nodes > 0 then
+							nodeResult[#nodeResult + 1] = {
+								remark = remark,
+								list = parsed_nodes,
+								sub_cfg = value,
+								md5 = new_md5
+							}
+						end
 					end
 				else
 					fail_list[#fail_list + 1] = value
@@ -2299,19 +2366,33 @@ local execute = function()
 				end
 			end
 		end
-
 		if #fail_list > 0 then
 			for index, value in ipairs(fail_list) do
 				log(string.format('【%s】订阅失败，可能是订阅地址无效，或是网络问题，请诊断！[%s]', (value.remark or ""), tostring(value.http_code or 0)))
 			end
 		end
-		update_node(0)
+		local nodes_changed = update_node(0)
+		local info_changed = update_subscribe_info()
+		-- 节点、引用关系和 MD5 必须在同一次提交中保存。
+		for _, result in ipairs(nodeResult) do
+			uci_set(result.sub_cfg[".name"], "md5", result.md5)
+		end
+		if nodes_changed or next(info_changed) then
+			uci_save(true)
+			restart_required = nodes_changed
+			for _, value in ipairs(subscribe_list) do
+				if info_changed[value[".name"]] then
+					log(string.format('刷新订阅【%s】账户用量与到期时间信息。', (value.remark or "")))
+				end
+			end
+		end
 	end
 end
 
 if arg[1] == "start" then
 	log('开始订阅...')
 	xpcall(execute, function(e)
+		flush_log_buffer()
 		log(e)
 		if type(debug) == "table" and type(debug.traceback) == "function" then
 			log(debug.traceback())
@@ -2323,8 +2404,9 @@ elseif arg[1] == "add" then
 	local f = assert(io.open("/tmp/links.conf", 'r'))
 	local raw = f:read('*all')
 	f:close()
+	raw = parseClashNode(raw, arg[2])
 	parse_link(raw, "1", arg[2])
-	update_node(1)
+	if update_node(1) then uci_save(true) end
 	api.remove("/tmp/links.conf")
 elseif arg[1] == "truncate" then
 	truncate_nodes(arg[2])

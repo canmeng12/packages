@@ -12,7 +12,7 @@ local GLOBAL = {
 
 local xray_version = api.get_app_version("xray")
 
-local xray_min_version = "26.7.11"
+local xray_min_version = "26.9.9"
 
 local function get_domain_excluded()
 	local path = string.format("/etc/%s/rules/domains_excluded", api.c_config)
@@ -138,9 +138,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 		if node.protocol == "masque" then
 			node.transport = "masque"
 			node.stream_security = "tls"
-			node.alpn = nil
 			node.utls = nil
-			node.finalmask = nil
 		end
 
 		if node.protocol == "http" and node.stream_security == "tls" then
@@ -277,9 +275,14 @@ function gen_outbound(flag, node, tag, proxy_table)
 				} or nil,
 				masqueSettings = (node.protocol == "masque") and {
 					path = (node.masque_path and node.masque_path ~= "") and node.masque_path or nil,
+					warp = (node.masque_warp == "1") and {
+						privateKey = (node.masque_warp_private_key or ""):gsub("\\n", "\n"),
+						publicKey = (node.masque_warp_public_key or ""):gsub("\\n", "\n"),
+						address = node.masque_warp_address
+					} or nil,
 					headers = (function()
 						local headers = {}
-						if (node.username and node.username ~= "") or (node.password and node.password ~= "") then
+						if node.masque_warp ~= "1" and ((node.username and node.username ~= "") or (node.password and node.password ~= "")) then
 							headers["authorization"] = "Basic " .. api.base64Encode((node.username or "") .. ":" .. (node.password or ""))
 						end
 						if node.user_agent and node.user_agent ~= "" then
@@ -300,9 +303,13 @@ function gen_outbound(flag, node, tag, proxy_table)
 					local finalmask = {}
 					local TP = node.transport
 					if TP == "mkcp" then
+						local s = { type = "mkcp-legacy" }
+						if node.mkcp_seed and node.mkcp_seed ~= "" then
+							s.settings = { value = node.mkcp_seed }
+						end
+						local udp = { s }
 						local map = {none = "none", srtp = "srtp", utp = "utp", ["wechat-video"] = "wechat",
 							dtls = "dtls", wireguard = "wireguard", dns = "dns"}
-						local udp = {}
 						if node.mkcp_guise and node.mkcp_guise ~= "none" then
 							local g = { type = "mkcp-legacy" }
 							g.settings = { header = map[node.mkcp_guise] }
@@ -311,11 +318,6 @@ function gen_outbound(flag, node, tag, proxy_table)
 							end
 							udp[#udp+1] = g
 						end
-						local s = { type = "mkcp-legacy" }
-						if node.mkcp_seed and node.mkcp_seed ~= "" then
-							s.settings = { value = node.mkcp_seed }
-						end
-						udp[#udp+1] = s
 						finalmask.udp = udp
 					elseif TP == "hysteria" then
 						local udp = {}
@@ -353,6 +355,30 @@ function gen_outbound(flag, node, tag, proxy_table)
 								}
 							}
 							udp[#udp+1] = r
+						elseif node.hysteria2_hop and node.hysteria2_hop ~= "" then
+							udp[#udp+1] = {
+								type = "udphop",
+								settings = {
+									mode = "intervallocal,intervalremote",
+									remotePorts = string.gsub(node.hysteria2_hop, ":", "-"),
+									interval = (function(v)
+										if not v then return 30 end
+										if v:find("-", 1, true) then
+											local min, max = v:match("^(%d+)%-(%d+)$")
+											min = tonumber(min)
+											max = tonumber(max)
+											if min and max then
+												min = (min >= 5) and min or 5
+												max = (max >= min) and max or min
+												return min .. "-" .. max
+											end
+											return 30
+										end
+										v = tonumber((v or "30"):match("^%d+"))
+										return (v and v >= 5) and v or 30
+									end)(node.hysteria2_hop_interval)
+								}
+							}
 						end
 						finalmask.udp = udp
 						local up = tonumber(node.hysteria2_up_mbps) or 0
@@ -361,25 +387,6 @@ function gen_outbound(flag, node, tag, proxy_table)
 							congestion = (up <= 0 and down <= 0) and "bbr" or "brutal",
 							brutalUp = up > 0 and (up .. "mbps") or nil,
 							brutalDown = down > 0 and (down .. "mbps") or nil,
-							udpHop = (node.hysteria2_hop) and {
-								ports = string.gsub(node.hysteria2_hop, ":", "-"),
-								interval = (function(v)
-									if not v then return 30 end
-									if v:find("-", 1, true) then
-										local min, max = v:match("^(%d+)%-(%d+)$")
-										min = tonumber(min)
-										max = tonumber(max)
-										if min and max then
-											min = (min >= 5) and min or 5
-											max = (max >= min) and max or min
-											return min .. "-" .. max
-										end
-										return 30
-									end
-									v = tonumber((v or "30"):match("^%d+"))
-									return (v and v >= 5) and v or 30
-								end)(node.hysteria2_hop_interval)
-							} or nil,
 							maxIdleTimeout = (function(t)
 								t = tonumber(tostring(t or "30"):match("^%d+"))
 								return (t and t >= 4 and t <= 120) and t or 30
@@ -390,7 +397,9 @@ function gen_outbound(flag, node, tag, proxy_table)
 							end)(node.hysteria2_keep_alive_period),
 							disablePathMTUDiscovery = node.hysteria2_disable_mtu_discovery == "1",
 							initStreamReceiveWindow = tonumber(node.hysteria2_stream_recv_win) and tonumber(node.hysteria2_stream_recv_win)*1048576 or nil,
+							maxStreamReceiveWindow = tonumber(node.hysteria2_stream_recv_win) and tonumber(node.hysteria2_stream_recv_win)*1048576 or nil,
 							initConnectionReceiveWindow = tonumber(node.hysteria2_conn_recv_win) and tonumber(node.hysteria2_conn_recv_win)*1048576 or nil,
+							maxConnectionReceiveWindow = tonumber(node.hysteria2_conn_recv_win) and tonumber(node.hysteria2_conn_recv_win)*1048576 or nil,
 						}
 					end
 					if fragment and fragment_table and ({raw=1, ws=1, httpupgrade=1, grpc=1, xhttp=1})[TP] then
@@ -427,7 +436,7 @@ function gen_outbound(flag, node, tag, proxy_table)
 				peers = (node.protocol == "wireguard") and {
 					{
 						publicKey = node.wireguard_public_key,
-						endpoint = node.address .. ":" .. node.port,
+						endpoint = (api.is_ipv6(node.address) and ("[" .. node.address .. "]") or node.address) .. ":" .. node.port,
 						preSharedKey = node.wireguard_preSharedKey,
 						keepAlive = node.wireguard_keepAlive and tonumber(node.wireguard_keepAlive) or nil
 					}
@@ -576,11 +585,15 @@ function gen_config_server(node)
 		end
 	end
 
-	if node.protocol == "vmess" or node.protocol == "vless" then
+	if node.protocol == "vless" then
+		settings = {
+			users = users,
+			decryption = (node.decryption and node.decryption ~= "") and node.decryption or "none"
+		}
+	elseif node.protocol == "vmess" then
 		if users then
 			settings = {
-				users = users,
-				decryption = (node.protocol == "vless") and ((node.decryption and node.decryption ~= "") and node.decryption or "none") or nil
+				users = users
 			}
 		end
 	elseif node.protocol == "socks" then
@@ -798,9 +811,13 @@ function gen_config_server(node)
 					finalmask = (function()
 						local finalmask = {}
 						if node.transport == "mkcp" then
+							local s = { type = "mkcp-legacy" }
+							if node.mkcp_seed and node.mkcp_seed ~= "" then
+								s.settings = { value = node.mkcp_seed }
+							end
+							local udp = { s }
 							local map = {none = "none", srtp = "srtp", utp = "utp", ["wechat-video"] = "wechat",
 								dtls = "dtls", wireguard = "wireguard", dns = "dns"}
-							local udp = {}
 							if node.mkcp_guise and node.mkcp_guise ~= "none" then
 								local g = { type = "mkcp-legacy" }
 								g.settings = { header = map[node.mkcp_guise] }
@@ -809,11 +826,6 @@ function gen_config_server(node)
 								end
 								udp[#udp+1] = g
 							end
-							local s = { type = "mkcp-legacy" }
-							if node.mkcp_seed and node.mkcp_seed ~= "" then
-								s.settings = { value = node.mkcp_seed }
-							end
-							udp[#udp+1] = s
 							finalmask.udp = udp
 						elseif node.transport == "hysteria" then
 							local udp = {}
@@ -1144,22 +1156,24 @@ function gen_config(var)
 			end
 
 			local valid_nodes = {}
+			local valid_node_tags = {}
 			for i = 1, #(blc_nodes or {}) do
 				local blc_node_id = blc_nodes[i]
 				local blc_node_tag = "blc-" .. blc_node_id
-				local is_new_blc_node = true
+				local outboundTag
 				for _, outbound in ipairs(outbounds) do
 					if string.sub(outbound.tag, 1, #blc_node_tag) == blc_node_tag then
-						is_new_blc_node = false
-						valid_nodes[#valid_nodes + 1] = outbound.tag
+						outboundTag = outbound.tag
 						break
 					end
 				end
-				if is_new_blc_node then
-					local outboundTag = gen_outbound_get_tag(flag, blc_node_id, blc_node_tag, { fragment = xray_settings.fragment == "1" or nil, noise = xray_settings.noise == "1" or nil })
-					if outboundTag then
-						valid_nodes[#valid_nodes + 1] = outboundTag
-					end
+				if not outboundTag then
+					outboundTag = gen_outbound_get_tag(flag, blc_node_id, blc_node_tag, { fragment = xray_settings.fragment == "1" or nil, noise = xray_settings.noise == "1" or nil })
+				end
+				-- 每个成员标签只保留一次，复用已有出站时也需要去重。
+				if outboundTag and not valid_node_tags[outboundTag] then
+					valid_node_tags[outboundTag] = true
+					valid_nodes[#valid_nodes + 1] = outboundTag
 				end
 				-- Check if balancing node duplicates fallback node
 				if _node.fallback_node == blc_node_id then
@@ -1476,8 +1490,21 @@ function gen_config(var)
 				local bin = api.finded_com("geoview")
 				if bin then
 					local geo_file = (api.uci_get_c("@global_rules[0]", "v2ray_location_asset") or "/usr/share/v2ray/"):match("^(.*)/") .. "/geosite.dat"
-					if luci.sys.call('"' .. bin .. '" -type geosite -input "' .. geo_file .. '" | grep -q "^GFW$"') == 0 then
-						domain_list = (domain_list == "") and "geosite:gfw" or domain_list .. "\ngeosite:gfw"
+					local gfw_rule
+					if sys.call('"' .. bin .. '" -type geosite -input "' .. geo_file .. '" 2>/dev/null | grep -q "^GFW$"') == 0 then
+						gfw_rule = "geosite:gfw"
+					elseif api.compare_versions(api.get_app_version("geoview"), ">=", "0.2.8") then
+						local output = api.CACHE_PATH .. "/geodata/gfwlist.dat"
+						if not fs.access(output) then
+							fs.mkdirr(api.CACHE_PATH .. "/geodata")
+							local cmd = string.format("%s -type geosite -action convert -input /usr/share/passwall/rules/gfwlist -list '*' -output %s -format geosite",
+								api.util.shellquote(bin), api.util.shellquote(output))
+							if api.exec_call(cmd) ~= 0 then fs.unlink(output) end
+						end
+						gfw_rule = fs.access(output) and "ext:gfwlist.dat:all" or nil
+					end
+					if gfw_rule then
+						domain_list = (domain_list == "") and gfw_rule or domain_list .. "\n" .. gfw_rule
 					end
 				end
 
@@ -1536,7 +1563,7 @@ function gen_config(var)
 							w = api.trim(w)
 							if w == "" or w:find("#") == 1 then return end
 							if w:find("rule-set:", 1, true) == 1 or w:find("rs:") == 1 then return end
-							if w:find("ext:", 1, true) == 1 then return end  -- Rule currently not support ext:
+							if w:find("ext:", 1, true) == 1 and not (e[".name"] == "GFW_Mode_List" and w == "ext:gfwlist.dat:all") then return end
 							table.insert(domains, w)
 							table.insert(domain_table.domain, w)
 						end)
@@ -2048,10 +2075,7 @@ function gen_config(var)
 
 	if inbounds or outbounds then
 		local config = {
-			env = (function()
-				local asset_location = api.uci_get_c("@global_rules[0]", "v2ray_location_asset") or "/usr/share/v2ray/"
-				return { XRAY_LOCATION_ASSET = asset_location }
-			end)(),
+			env = { XRAY_LOCATION_ASSET = api.CACHE_PATH .. "/geodata" },
 			log = {
 				-- error = string.format("/tmp/etc/passwall/%s.log", node[".name"]),
 				loglevel = get_log_level(loglevel)

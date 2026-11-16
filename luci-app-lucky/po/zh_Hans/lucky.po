@@ -1,11 +1,56 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
+msgid "Layout"
+msgstr "布局"
+
+msgid "Side by side"
+msgstr "并排"
+
+msgid "Vertical"
+msgstr "垂直"
+
+msgid "Session expired. Reload this page and sign in again."
+msgstr "登录已过期，请刷新页面并重新登录。"
+
+msgid "Choose file"
+msgstr "选择文件"
+
+msgid "Choose a non-empty file no larger than 64 MiB."
+msgstr "请选择非空文件，大小不能超过 64 MiB。"
+
+msgid "Uploading…"
+msgstr "正在上传…"
+
+msgid "Upload"
+msgstr "上传"
+
+msgid "Upload cancelled."
+msgstr "已取消上传。"
+
+msgid "Upload file"
+msgstr "上传文件"
+
+msgid "Configuration applied."
+msgstr "配置已应用。"
+
+msgid "Changes saved. Apply them to reload Lucky."
+msgstr "修改已保存，应用后将重新加载 Lucky。"
+
+msgid "Save & Apply"
+msgstr "保存并应用"
+
+msgid "Reset"
+msgstr "复位"
+
+msgid "Unable to load the Lucky page. Reload to retry."
+msgstr "无法加载 Lucky 页面，请刷新重试。"
+
 msgid "Admin access policy"
 msgstr "管理后台访问策略"
 
-msgid "Admin access policy updated. Restart Lucky to apply it."
-msgstr "管理后台访问策略已更新，重启 Lucky 后生效。"
+msgid "Admin access policy saved."
+msgstr "管理后台访问策略已保存。"
 
 msgid "Admin credentials reset"
 msgstr "管理凭据已重置"
@@ -16,14 +61,17 @@ msgstr "管理后台 HTTP 端口"
 msgid "Admin panel"
 msgstr "管理后台"
 
-msgid "Admin port updated. Restart Lucky to apply it."
-msgstr "管理端口已更新，重启 Lucky 后生效。"
+msgid "Admin port saved."
+msgstr "管理端口已保存。"
 
 msgid "Admin safe URL"
 msgstr "管理后台安全入口"
 
-msgid "Admin safe URL updated. Restart Lucky to apply it."
-msgstr "安全入口已更新，重启 Lucky 后生效。"
+msgid "Admin safe URL saved."
+msgstr "安全入口已保存。"
+
+msgid "Configuration saved, but Lucky could not restart. Start it manually."
+msgstr "配置已保存，但 Lucky 未能重新启动，请手动启动。"
 
 msgid "Allow Internet access to the admin panel"
 msgstr "允许从互联网访问管理后台"
@@ -82,6 +130,9 @@ msgstr "加载错误：%s"
 msgid "Local access only"
 msgstr "仅限本地访问"
 
+msgid "Not reported by this core"
+msgstr "当前核心未提供此状态"
+
 msgid "Lucky"
 msgstr "Lucky"
 
@@ -99,9 +150,6 @@ msgstr "未安装"
 
 msgid "Package architecture"
 msgstr "软件包架构"
-
-msgid "Persistent configuration"
-msgstr "持久化配置"
 
 msgid "Reset admin credentials"
 msgstr "重置管理账号密码"
@@ -163,8 +211,11 @@ msgstr "服务状态与后台管理"
 msgid "Access settings"
 msgstr "访问设置"
 
-msgid "Save changes, then restart Lucky to apply them."
-msgstr "保存设置后，重启 Lucky 生效。"
+msgid "Saving access settings briefly stops Lucky. It starts again only if it was running."
+msgstr "保存访问设置时会短暂停止 Lucky；仅在原本运行时自动重新启动。"
+
+msgid "Access settings apply without restarting a running Lucky. A stopped service stays stopped."
+msgstr "访问设置在线生效，无需重启 Lucky；已停止的服务会保持停止。"
 
 msgid "Only reset credentials if you cannot sign in."
 msgstr "仅在无法登录时重置管理账号密码。"
@@ -436,6 +487,12 @@ msgstr "可用内存不足，已跳过核心信息查询。可停止 Lucky 后�
 msgid "Unable to read recovery settings. Install the matching updated Lucky core package."
 msgstr "无法读取自动恢复设置，请安装配套更新的 Lucky 核心软件包。"
 
+msgid "Unable to read service status."
+msgstr "无法读取运行状态。"
+
+msgid "Command failed (exit code %s)."
+msgstr "命令执行失败（退出码 %s）。"
+
 msgid "Recovery enabled"
 msgstr "已开启"
 
@@ -462,3 +519,36 @@ msgstr "意外退出自动恢复"
 
 msgid "Adds a fallback to system supervision. Manual stop and maintenance pause recovery. Uninstalling the Lucky core package removes its scheduled task."
 msgstr "作为系统进程守护的额外保障。主动停止或维护期间暂停恢复；卸载 Lucky 核心软件包时会清理它创建的计划任务。"
+
+msgid "Absolute IP allowlist"
+msgstr "绝对 IP 白名单"
+
+msgid "LAN networks"
+msgstr "局域网网段"
+
+msgid "Backup format and restore requirements"
+msgstr "备份格式与还原要求"
+
+msgid "Clearing removes every configuration file and leaves Lucky stopped."
+msgstr "清空会删除所有配置文件，并保持 Lucky 停止。"
+
+msgid "Format and behavior"
+msgstr "格式与生效说明"
+
+msgid "Recovery behavior"
+msgstr "自动恢复说明"
+
+msgid "Open Lucky to manage its services and rules."
+msgstr "进入 Lucky 后台，管理服务与规则。"
+
+msgid "Allow individual IPs before the global blacklist. Requires Lucky 3.1.0 or later."
+msgstr "优先于全局黑名单的独立 IP 白名单，需要 Lucky 3.1.0 及以上版本。"
+
+msgid "Define local IPs and networks. A non-empty file replaces the built-in networks."
+msgstr "自定义局域网 IP 和网段；文件非空时，替换默认内置网段。"
+
+msgid "Configuration and backups"
+msgstr "配置与备份"
+
+msgid "Backups and rule files use the saved directory. Save and apply directory changes separately."
+msgstr "备份和规则文件使用已保存的配置目录。修改目录后，请单独保存并应用。"

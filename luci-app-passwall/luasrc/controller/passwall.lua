@@ -73,6 +73,7 @@ function index()
 	entry({"admin", "services", appname, "get_redir_log"}, call("get_redir_log")).leaf = true
 	entry({"admin", "services", appname, "get_socks_log"}, call("get_socks_log")).leaf = true
 	entry({"admin", "services", appname, "get_chinadns_log"}, call("get_chinadns_log")).leaf = true
+	entry({"admin", "services", appname, "get_smartdns_log"}, call("get_smartdns_log")).leaf = true
 	entry({"admin", "services", appname, "get_log"}, call("get_log")).leaf = true
 	entry({"admin", "services", appname, "clear_log"}, call("clear_log")).leaf = true
 	entry({"admin", "services", appname, "index_status"}, call("index_status")).leaf = true
@@ -189,12 +190,12 @@ function socks_autoswitch_add_node()
 		uci_set(id, "enable_autoswitch", "1")
 		local new_list = uci_get(id, "autoswitch_backup_node") or {}
 		for i = #new_list, 1, -1 do
-			if (uci_get(new_list[i], "remarks") or ""):find(key) then
+			if (uci_get(new_list[i], "remarks") or ""):find(key, 1, true) then
 				table.remove(new_list, i)
 			end
 		end
 		for k, e in ipairs(api.get_valid_nodes()) do
-			if e.node_type == "normal" and e["remark"]:find(key) then
+			if e.node_type == "normal" and e["remark"]:find(key, 1, true) then
 				table.insert(new_list, e.id)
 			end
 		end
@@ -211,7 +212,7 @@ function socks_autoswitch_remove_node()
 		uci_set(id, "enable_autoswitch", "1")
 		local new_list = uci_get(id, "autoswitch_backup_node") or {}
 		for i = #new_list, 1, -1 do
-			if (uci_get(new_list[i], "remarks") or ""):find(key) then
+			if (uci_get(new_list[i], "remarks") or ""):find(key, 1, true) then
 				table.remove(new_list, i)
 			end
 		end
@@ -250,6 +251,7 @@ function get_redir_log()
 	local path = api.TMP_PATH .. "/acl/" .. id
 
 	local function alert(msg)
+		http.prepare_content("text/html; charset=utf-8")
 		http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate(msg)))
 	end
 
@@ -257,8 +259,9 @@ function get_redir_log()
 	if id and id ~= "default" then
 		local global_node = uci_get("@global[0]", "node") or "nil"
 		local acl_node = uci_get(id, "node") or "nil"
+		local use_global_config = uci_get(id, "use_global_config") == "1"
 		local global_enabled = uci_get("@global[0]", "enabled") == "1"
-		if acl_node == global_node and global_enabled then
+		if (use_global_config or acl_node == global_node) and global_enabled then
 			path = api.TMP_PATH .. "/acl/default"
 			if uci_get("@global[0]", "log_node") ~= "1" then
 				alert("The access control node is the same as the global node. Please enable global logging.")
@@ -269,10 +272,10 @@ function get_redir_log()
 		end
 	end
 
-	if fs.access(path .. "/" .. name .. ".log") then
-		local content = luci.sys.exec("tail -n 5000 ".. path .. "/" .. name .. ".log")
-		content = content:gsub("\n", "<br />")
-		http.write(content)
+	path = path .. "/" .. name .. ".log"
+	if fs.access(path) then
+		http.prepare_content("text/plain; charset=utf-8")
+		http.write(luci.sys.exec("tail -n 5000 " .. util.shellquote(path)))
 	else
 		alert("Not enabled log")
 	end
@@ -282,10 +285,10 @@ function get_socks_log()
 	local name = http.formvalue("name")
 	local path = api.TMP_PATH .. "/" .. name .. ".log"
 	if fs.access(path) then
-		local content = luci.sys.exec("tail -n 5000 ".. path)
-		content = content:gsub("\n", "<br />")
-		http.write(content)
+		http.prepare_content("text/plain; charset=utf-8")
+		http.write(luci.sys.exec("tail -n 5000 " .. util.shellquote(path)))
 	else
+		http.prepare_content("text/html; charset=utf-8")
 		http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
 	end
 end
@@ -296,19 +299,32 @@ function get_chinadns_log()
 	if flag ~= "default" then
 		local global_node = uci_get("@global[0]", "node") or "nil"
 		local acl_node = uci_get(flag, "node") or "nil"
-		if acl_node == global_node and uci_get("@global[0]", "enabled") == "1" then
+		local use_global_config = uci_get(flag, "use_global_config") == "1"
+		if (use_global_config or acl_node == global_node) and uci_get("@global[0]", "enabled") == "1" then
 			path = api.TMP_PATH .. "/acl/default/chinadns_ng.log"
 			if uci_get("@global[0]", "log_chinadns_ng") ~= "1" then
+				http.prepare_content("text/html; charset=utf-8")
 				http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("The access control node is the same as the global node. Please enable global logging.")))
 				return
 			end
 		end
 	end
 	if fs.access(path) then
-		local content = luci.sys.exec("tail -n 5000 ".. path)
-		content = content:gsub("\n", "<br />")
-		http.write(content)
+		http.prepare_content("text/plain; charset=utf-8")
+		http.write(luci.sys.exec("tail -n 5000 " .. util.shellquote(path)))
 	else
+		http.prepare_content("text/html; charset=utf-8")
+		http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
+	end
+end
+
+function get_smartdns_log()
+	local path = api.TMP_PATH .. "/acl/default/smartdns.log"
+	if fs.access(path) then
+		http.prepare_content("text/plain; charset=utf-8")
+		http.write(luci.sys.exec("tail -n 5000 " .. util.shellquote(path)))
+	else
+		http.prepare_content("text/html; charset=utf-8")
 		http.write(string.format("<script>alert('%s');window.close();</script>", i18n.translate("Not enabled log")))
 	end
 end
@@ -326,8 +342,8 @@ function index_status()
 	local e = {}
 	local dns_shunt = uci_get("@global[0]", "dns_shunt") or "dnsmasq"
 	if dns_shunt == "smartdns" then
-		local port = api.get_cache_var("SMARTDNS_LOCAL_PORT") or 0
-		e.dns_mode_status = (port ~= 0) and luci.sys.call("netstat -apn | grep ':%s ' >/dev/null" % port) == 0 or false
+		local config_file = api.TMP_PATH .. "/acl/default/smartdns.conf"
+		e.dns_mode_status = luci.sys.call("/bin/busybox top -bn1 | grep -v 'grep' | grep -F %s | grep 'smartdns' >/dev/null" % util.shellquote(config_file)) == 0
 	elseif dns_shunt == "chinadns-ng" then
 		e.dns_mode_status = luci.sys.call("/bin/busybox top -bn1 | grep -v 'grep' | grep '%s/bin/' | grep 'default' | grep 'chinadns_ng' >/dev/null" % api.TMP_PATH) == 0
 	else
@@ -370,6 +386,7 @@ function socks_status()
 	e.socks_status = luci.sys.call(string.format("/bin/busybox top -bn1 | grep -v -E 'grep|acl/|acl_' | grep '%s/bin/' | grep '/%s' > /dev/null", appname, id)) == 0
 	local use_http = uci_get(id, "http_port") or 0
 	e.use_http = 0
+	e.http_status = false
 	if tonumber(use_http) > 0 then
 		e.use_http = 1
 		e.http_status = luci.sys.call(string.format("/bin/busybox top -bn1 | grep -v -E 'grep|acl/|acl_' | grep '%s/bin/' | grep '/%s' | grep -E '\\+http|_http' > /dev/null", appname, id)) == 0
@@ -870,17 +887,17 @@ function read_rulelist()
 end
 
 local backup_files = {
-    "/etc/config/passwall",
-    "/etc/config/passwall_server",
-    "/etc/passwall/rules/block_host",
-    "/etc/passwall/rules/block_ip",
-    "/etc/passwall/rules/direct_host",
-    "/etc/passwall/rules/direct_ip",
-    "/etc/passwall/rules/proxy_host",
-    "/etc/passwall/rules/proxy_ip",
-    "/etc/passwall/rules/lanlist_ipv4",
-    "/etc/passwall/rules/lanlist_ipv6",
-    "/etc/passwall/rules/domains_excluded"
+	"/etc/config/passwall",
+	"/etc/config/passwall_server",
+	"/etc/passwall/rules/block_host",
+	"/etc/passwall/rules/block_ip",
+	"/etc/passwall/rules/direct_host",
+	"/etc/passwall/rules/direct_ip",
+	"/etc/passwall/rules/proxy_host",
+	"/etc/passwall/rules/proxy_ip",
+	"/etc/passwall/rules/lanlist_ipv4",
+	"/etc/passwall/rules/lanlist_ipv6",
+	"/etc/passwall/rules/domains_excluded"
 }
 
 function create_backup()

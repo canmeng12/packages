@@ -109,6 +109,9 @@ msgstr "SOCKS-сервер"
 msgid "Current Node"
 msgstr "Активный сервер"
 
+msgid "Port Status"
+msgstr "Состояние портов"
+
 msgid "Listen Port"
 msgstr "Порт прослушивания"
 
@@ -605,6 +608,9 @@ msgstr "Размер окна приёма соединения QUIC"
 msgid "QUIC concurrent bidirectional streams"
 msgstr "Макс. количество одновременных двунаправленных потоков QUIC"
 
+msgid "Keep Alive"
+msgstr "Поддержание соединения"
+
 msgid "QUIC KeepAlive interval"
 msgstr "Интервал QUIC KeepAlive"
 
@@ -1010,6 +1016,15 @@ msgstr "Перемещение..."
 msgid "App Update"
 msgstr "Обновление компонентов"
 
+msgid "GitHub Proxy"
+msgstr "Обратный прокси для GitHub"
+
+msgid "Use GitHub instead of proxy nodes for component updates."
+msgstr "При обновлении компонентов проверять и загружать их напрямую через сервис обратного прокси для GitHub, без использования прокси-узлов."
+
+msgid "Close(Not use)"
+msgstr "Отключено (не использовать)"
+
 msgid "if you want to run from memory, change the path, /tmp beginning then save the application and update it manually."
 msgstr "Если вы хотите запускать из оперативной памяти, измените путь на начинающийся с /tmp, затем сохраните настройки и обновите компонент вручную."
 
@@ -1208,28 +1223,28 @@ msgstr "Неверный формат IPv6, пожалуйста, введите
 msgid "Not true format, please re-enter!"
 msgstr "Неверный формат, пожалуйста, введите заново!"
 
-msgid "Plaintext: If this string matches any part of the targeting domain, this rule takes effet. Example: rule 'sina.com' matches targeting domain 'sina.com', 'sina.com.cn' and 'www.sina.com', but not 'sina.cn'."
+msgid "Plaintext: If this string matches any part of the targeting domain, this rule takes effect. Example: rule 'sina.com' matches targeting domain 'sina.com', 'sina.com.cn' and 'www.sina.com', but not 'sina.cn'."
 msgstr "Текст: правило срабатывает, если строка встречается в любом месте домена. Например, 'sina.com' совпадёт с 'sina.com', 'sina.com.cn', 'www.sina.com', но не с 'sina.cn'."
 
-msgid "Regular expression: Begining with 'regexp:', the rest is a regular expression. When the regexp matches targeting domain, this rule takes effect. Example: rule 'regexp:\\.goo.*\\.com$' matches 'www.google.com' and 'fonts.googleapis.com', but not 'google.com'."
+msgid "Regular expression: Beginning with 'regexp:', the rest is a regular expression. When the regexp matches targeting domain, this rule takes effect. Example: rule 'regexp:\\.goo.*\\.com$' matches 'www.google.com' and 'fonts.googleapis.com', but not 'google.com'."
 msgstr "Регулярное выражение: начинается с 'regexp:', далее — шаблон. Правило срабатывает при совпадении. Например, 'regexp:\\.goo.*\\.com$' совпадёт с 'www.google.com' и 'fonts.googleapis.com', но не с 'google.com'."
 
-msgid "Subdomain (recommended): Begining with 'domain:' and the rest is a domain. When the targeting domain is exactly the value, or is a subdomain of the value, this rule takes effect. Example: rule 'domain:v2ray.com' matches 'www.v2ray.com', 'v2ray.com', but not 'xv2ray.com'."
+msgid "Subdomain (recommended): Beginning with 'domain:' and the rest is a domain. When the targeting domain is exactly the value, or is a subdomain of the value, this rule takes effect. Example: rule 'domain:v2ray.com' matches 'www.v2ray.com', 'v2ray.com', but not 'xv2ray.com'."
 msgstr "Поддомен (рекомендуется): начинается с 'domain:', далее — домен. Правило срабатывает для точного совпадения или любого поддомена. Например, 'domain:v2ray.com' совпадёт с 'www.v2ray.com' и 'v2ray.com', но не с 'xv2ray.com'."
 
-msgid "Full domain: Begining with 'full:' and the rest is a domain. When the targeting domain is exactly the value, the rule takes effect. Example: rule 'domain:v2ray.com' matches 'v2ray.com', but not 'www.v2ray.com'."
+msgid "Full domain: Beginning with 'full:' and the rest is a domain. When the targeting domain is exactly the value, the rule takes effect. Example: rule 'full:v2ray.com' matches 'v2ray.com', but not 'www.v2ray.com'."
 msgstr "Полное совпадение: начинается с 'full:', далее — домен. Правило срабатывает только при точном совпадении. Например, 'full:v2ray.com' совпадёт только с 'v2ray.com', но не с 'www.v2ray.com'."
 
-msgid "Sing-Box rule-set: Begining with 'rule-set:remote:' or 'rule-set:local:'"
+msgid "Sing-Box rule-set: Beginning with 'rule-set:remote:' or 'rule-set:local:'"
 msgstr "Набор правил Sing-Box: начинается с 'rule-set:remote:' или 'rule-set:local:'"
 
 msgid "Such as:"
 msgstr "Например:"
 
-msgid "Pre-defined domain list: Begining with 'geosite:' and the rest is a name, such as geosite:google or geosite:cn."
+msgid "Pre-defined domain list: Beginning with 'geosite:' and the rest is a name, such as geosite:google or geosite:cn."
 msgstr "Предопределённый список: начинается с 'geosite:', далее — имя набора, например geosite:google или geosite:cn."
 
-msgid "Annotation: Begining with #"
+msgid "Annotation: Beginning with #"
 msgstr "Комментарий начинается с #"
 
 msgid "Invert match result."
@@ -1360,6 +1375,9 @@ msgstr "Используется, если в ссылке на узел это�
 
 msgid "%s Node Use Type"
 msgstr "Тип использования сервера %s"
+
+msgid "Other"
+msgstr "Другие"
 
 msgid "UDP relay mode"
 msgstr "Режим ретрансляции UDP"
@@ -1541,6 +1559,9 @@ msgstr "Необходимо указать URL для загрузки."
 msgid "File download failed or timed out: %s"
 msgstr "Ошибка загрузки файла или тайм-аут: %s"
 
+msgid "File verification failed."
+msgstr "Ошибка проверки файла."
+
 msgid "File path required."
 msgstr "Необходимо указать путь к файлу."
 
@@ -1573,12 +1594,6 @@ msgstr "Макс. параллельных соединений XUDP"
 
 msgid "Padding"
 msgstr "Заполнение"
-
-msgid "Enable early data"
-msgstr "Включить 0-RTT данные"
-
-msgid "Early data length"
-msgstr "Макс. длина 0-RTT данных"
 
 msgid "Early data header name"
 msgstr "Имя HTTP-заголовка для 0-RTT"
@@ -2211,8 +2226,14 @@ msgstr "Обнаружение переключения соединений: п
 msgid "Socks switch detection: Port [%s] [%s:[%s]] abnormal."
 msgstr "Обнаружено переключение Socks: порт [%s] [%s:[%s]] работает некорректно."
 
-msgid "Socks switch detection: Port [%s] all nodes are unavailable!"
-msgstr "Обнаружено переключение коммутатора: порт [%s], все узлы недоступны!"
+msgid "Socks switch detection: Port [%s] all nodes are unavailable or switching failed!"
+msgstr "Проверка переключения SOCKS: порт [%s], все узлы недоступны или переключение не удалось!"
+
+msgid "Socks switch detection: Port [%s] node switch failed, continue trying other nodes!"
+msgstr "Проверка переключения SOCKS: порт [%s], переключить узел не удалось, пробуем другие узлы!"
+
+msgid "Socks switch detection: Port [%s] failed to restore the primary node!"
+msgstr "Проверка переключения SOCKS: порт [%s], не удалось восстановить основной узел!"
 
 msgid "Socks switch detection: Port [%s] Unknown error."
 msgstr "Обнаружение переключения разъема: порт [%s], неизвестная ошибка."
@@ -2244,17 +2265,38 @@ msgstr "Вход %s:%s"
 msgid "Node: %s:%s, Weight: %s"
 msgstr "Сервер: %s:%s, вес: %s"
 
-msgid "[Rule update] instance is running; please try again later."
-msgstr "Экземпляр [Обновление правила] запущен; пожалуйста, попробуйте позже."
+msgid "Unable to open the subscription/rule update lock. Exiting."
+msgstr "Не удалось открыть файл блокировки обновления подписок и правил. Завершение работы."
 
-msgid "[Subscription] instance is running; [Rule Update] queue and wait."
-msgstr "Экземпляр [Подписка] запущен; [Обновление правила] поставить в очередь и ждать."
+msgid "A subscription or rule update is already running. Skipping this request."
+msgstr "Обновление подписки или правил уже выполняется. Этот запрос пропущен."
+
+msgid "Unable to acquire the update lock. Scheduled task failed."
+msgstr "Не удалось получить блокировку обновления. Запланированная задача не выполнена."
+
+msgid "Subscription"
+msgstr "Подписка"
+
+msgid "Rule Update"
+msgstr "Обновление правил"
+
+msgid "Subscription/Rule Update"
+msgstr "Обновление подписки/правил"
+
+msgid "[%s] is running; [%s] is queued and waiting..."
+msgstr "[%s] выполняется; [%s] находится в очереди и ожидает..."
 
 msgid "Start updating the rules..."
 msgstr "Начало обновления правил..."
 
 msgid "Download file size verification error. Original file size: %sB. Downloaded file size: %sB."
 msgstr "Ошибка проверки размера файла. Исходный размер: %sB, загруженный: %sB."
+
+msgid "%s SHA256 verification information is invalid. Update failed."
+msgstr "Недопустимые данные проверки SHA256 для %s. Обновление не выполнено."
+
+msgid "%s file format verification failed. Update failed."
+msgstr "Ошибка проверки формата файла %s. Обновление не выполнено."
 
 msgid "Downloaded file is empty or an error occurred while reading it."
 msgstr "Загруженный файл пуст или произошла ошибка при чтении."
@@ -2406,11 +2448,11 @@ msgstr "Без прокси"
 msgid "Proxy"
 msgstr "Прокси"
 
-msgid "[Subscription] instance is running; please try again later."
-msgstr "Экземпляр [Подписки] запущен; пожалуйста, попробуйте позже."
+msgid "Unable to acquire the stop lock. Exiting."
+msgstr "Не удалось получить блокировку остановки. Завершение работы."
 
-msgid "[Rule Update] instance is running; [Subscription] queue and wait."
-msgstr "Экземпляр [Обновление правила] запущен; [Подписка] ставится в очередь и ожидает."
+msgid "Failed or timed out waiting for subscription/rule updates. Restart cancelled."
+msgstr "Ошибка или превышено время ожидания обновления подписок/правил. Перезапуск отменён."
 
 msgid "Start subscribing..."
 msgstr "Начало подписки..."
@@ -2421,11 +2463,14 @@ msgstr "Начало подписки: %s"
 msgid "Subscription: [%s] No changes, no update required."
 msgstr "Подписка: [%s] изменений нет, обновление не требуется."
 
+msgid "Refresh subscription [%s] account usage and expiration information."
+msgstr "Обновление информации об использовании трафика и сроке действия учётной записи подписки [%s]."
+
 msgid "[%s] Subscription failed. This could be due to an invalid subscription address or a network issue. Please diagnose the problem! [%s]"
 msgstr "[%s] Ошибка подписки. Возможно, адрес подписки неверен или есть проблема с сетью. Пожалуйста, проведите диагностику! [%s]"
 
-msgid "Error, restoring service."
-msgstr "Ошибка, выполняется восстановление службы."
+msgid "An error occurred during subscription."
+msgstr "При обновлении подписки произошла ошибка."
 
 msgid "Subscription complete..."
 msgstr "Подписка завершена..."
@@ -2443,7 +2488,7 @@ msgid "Gecko Packet Size (max)"
 msgstr "Размер упаковки Gecko (макс)"
 
 msgid "Enable UPnP/NAT-PMP port mapping on your gateway to improve hole punching success."
-msgstr "Включите сопоставление портов UPnP/NAT-PMP на вашем шлюзе, чтобы повысить вероятность успешного выполнения операций "пробивания дыр"."
+msgstr "Включите сопоставление портов UPnP/NAT-PMP на вашем шлюзе, чтобы повысить вероятность успешного выполнения операций \"пробивания дыр\"."
 
 msgid "valid time (hh:mm)"
 msgstr "Время действия (чч:мм)"
@@ -2462,3 +2507,138 @@ msgstr "Задает список поддерживаемых наборов ш
 
 msgid "This username already exists."
 msgstr "Это имя пользователя уже существует."
+
+msgid "Update Options"
+msgstr "Параметры обновления"
+
+msgid "MASQUE Path"
+msgstr "Путь MASQUE"
+
+msgid "Custom HTTP Headers"
+msgstr "Пользовательские HTTP-заголовки"
+
+msgid "MASQUE Address"
+msgstr "Адрес туннеля MASQUE"
+
+msgid "WARP Device Private Key"
+msgstr "Приватный ключ устройства WARP"
+
+msgid "WARP Endpoint Public Key"
+msgstr "Публичный ключ сервера WARP"
+
+msgid "Installing..."
+msgstr "Установка..."
+
+msgid "Do not refresh or switch pages during installation."
+msgstr "Не обновляйте страницу и не переходите на другие страницы во время установки."
+
+msgid "Update failed"
+msgstr "Ошибка обновления"
+
+msgid "Unknown error"
+msgstr "Неизвестная ошибка"
+
+msgid "Click to sort; click again to reverse. Press Save & Apply to keep the order."
+msgstr "Нажмите для сортировки; повторное нажатие меняет направление. Чтобы сохранить порядок, нажмите «Сохранить и применить»."
+
+msgid "Sort by type or protocol, then by name"
+msgstr "Сортировать по типу или протоколу, затем по имени"
+
+msgid "Sort by server address and port"
+msgstr "Сортировать по адресу сервера и порту"
+
+msgid "Restore the saved order"
+msgstr "Вернуть сохранённый порядок"
+
+msgid "The order changed on this page only. Press Save & Apply to store it on the router."
+msgstr "Порядок изменён только на этой странице. Чтобы записать его на роутер, нажмите «Сохранить и применить»."
+
+msgid "Saved order restored."
+msgstr "Сохранённый порядок восстановлен."
+
+msgid "Automatic ping is still running (%d left). Sorting will run when it finishes."
+msgstr "Автопроверка ещё выполняется (осталось %d). Сортировка запустится сразу после её окончания."
+
+msgid "Automatic ping did not finish within 2 minutes. Sorting was cancelled. Reload the page and try again."
+msgstr "Автопроверка не завершилась за 2 минуты. Сортировка отменена. Обновите страницу и попробуйте снова."
+
+msgid "Filter:"
+msgstr "Фильтр:"
+
+msgid "(empty)"
+msgstr "(пусто)"
+
+msgid "Word in remarks"
+msgstr "Слово в описании"
+
+msgid "search..."
+msgstr "поиск..."
+
+msgid "Show only rows that contain this text"
+msgstr "Показать только строки, содержащие этот текст"
+
+msgid "Shown %s of %t"
+msgstr "Показано %s из %t"
+
+msgid "Reset"
+msgstr "Сбросить"
+
+msgid "Show all rows"
+msgstr "Показать все строки"
+
+msgid "The filter only hides rows on this page and changes nothing on the router. Select all skips hidden rows."
+msgstr "Фильтр только скрывает строки на этой странице и ничего не меняет на роутере. «Выделить все» пропускает скрытые строки."
+
+msgid "Subscription conversion: discard SS node %s, unsupported cipher: %s"
+msgstr "Преобразование подписки: узел SS %s пропущен, неподдерживаемый шифр: %s"
+
+msgid "Subscription conversion: discard SS node %s, unsupported plugin: %s"
+msgstr "Преобразование подписки: узел SS %s пропущен, неподдерживаемый плагин: %s"
+
+msgid "Subscription conversion: discard Hysteria node %s, unsupported transport: %s"
+msgstr "Преобразование подписки: узел Hysteria %s пропущен, неподдерживаемый транспорт: %s"
+
+msgid "Subscription conversion: discard TUIC node %s, TUIC v4 is not supported."
+msgstr "Преобразование подписки: узел TUIC %s пропущен, TUIC v4 не поддерживается."
+
+msgid "Subscription conversion: discard TUIC node %s, authentication information is incomplete."
+msgstr "Преобразование подписки: узел TUIC %s пропущен, неполные данные аутентификации."
+
+msgid "Subscription conversion: discard AnyTLS node %s, Sing-Box does not support AnyTLS + %s"
+msgstr "Преобразование подписки: узел AnyTLS %s пропущен, Sing-Box не поддерживает AnyTLS + %s"
+
+msgid "Subscription conversion: discard Snell node %s, Sing-Box does not support Snell + %s"
+msgstr "Преобразование подписки: узел Snell %s пропущен, Sing-Box не поддерживает Snell + %s"
+
+msgid "Subscription conversion: discard Snell node %s, Sing-Box does not support Snell versions below 4."
+msgstr "Преобразование подписки: узел Snell %s пропущен, Sing-Box не поддерживает версии Snell ниже 4."
+
+msgid "Subscription conversion: skip a malformed node."
+msgstr "Преобразование подписки: узел с неполным форматом пропущен."
+
+msgid "Subscription conversion: discard node %s, node information is incomplete."
+msgstr "Преобразование подписки: узел %s пропущен, неполные данные узла."
+
+msgid "Subscription conversion: discard node %s, invalid bandwidth format."
+msgstr "Преобразование подписки: узел %s пропущен, неверный формат пропускной способности."
+
+msgid "Subscription conversion: discard unsupported node %s, node type: %s"
+msgstr "Преобразование подписки: неподдерживаемый узел %s пропущен, тип узла: %s"
+
+msgid "Subscription conversion: extracted node domain DNS: %s"
+msgstr "Преобразование подписки: получен DNS для доменов узлов: %s"
+
+msgid "Subscription conversion: YAML parsing failed: %s"
+msgstr "Преобразование подписки: ошибка разбора YAML: %s"
+
+msgid "Subscription conversion: Clash subscription detected, converting..."
+msgstr "Преобразование подписки: обнаружена подписка Clash, выполняется преобразование..."
+
+msgid "Subscription conversion: discard node %s, conversion failed."
+msgstr "Преобразование подписки: узел %s пропущен, ошибка преобразования."
+
+msgid "Note: Auto tries to extract node DNS from Clash subscriptions. Disable skips extraction."
+msgstr "Примечание: в режиме «Авто» выполняется извлечение DNS узлов из подписок Clash. «Отключить» отменяет извлечение."
+
+msgid "Never expires"
+msgstr "Бессрочно"

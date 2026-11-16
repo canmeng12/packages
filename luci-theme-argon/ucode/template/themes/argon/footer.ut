@@ -32,12 +32,9 @@
 				<ul class="breadcrumb pull-right" id="modemenu" style="display:none"></ul>
 			</div>
 		</footer>
-	</div>
+	</main>
 </div>
-	<script>
-		// thanks for Jo-Philipp Wich <jow@openwrt.org>
-		var luciLocation = {{ ctx.path }};
-	</script>
-<script type="text/javascript">L.require('menu-argon')</script>
+</div>
+{% include('themes/' + theme + '/page_scripts', { is_login: false }) %}
 </body>
 </html>

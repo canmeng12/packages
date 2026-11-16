@@ -1,15 +1,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mihomo
-PKG_VERSION:=1.19.32
-PKG_RELEASE:=2
+PKG_VERSION:=1.19.33
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/MetaCubeX/mihomo.git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_MIRROR_HASH:=0194b7039e6ff1143c7b80dd70d3a06976f60ff9f40802111d15a93da06c8a95
+PKG_MIRROR_HASH:=f29117485648124b819d5f790a27fceef3f8e2a9aceec6b12584bd99c8ab3fdf
 
 PKG_LICENSE:=GPL3.0+
 PKG_MAINTAINER:=Joseph Mory <morytyann@gmail.com>
@@ -30,6 +30,23 @@ GO_PKG_INSTALL_BIN_PATH:=/usr/libexec
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
 
+# Generate a private overlay with the exact Go toolchain used for this package.
+# Runtime DT detection restricts hardware use to AN7581 without ARM AES.
+ifeq ($(GO_ARCH),arm64)
+  define Build/Compile
+	$(GO_PKG_VARS) python3 $(PKG_BUILD_DIR)/tools/eip93/overlay.py --go go --out $(PKG_BUILD_DIR)/.eip93-overlay
+	$(call GoPackage/Build/Compile,-overlay=$(PKG_BUILD_DIR)/.eip93-overlay/overlay.json)
+  endef
+endif
+
+# Compress once per build, not once per package/rootfs installation.
+# Keep Go's output intact and let the .built stamp guard the packed copy.
+define Build/Install
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/.upx
+	$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/mihomo $(PKG_BUILD_DIR)/.upx/mihomo
+	$(STAGING_DIR_HOST)/bin/upx --lzma --best $(PKG_BUILD_DIR)/.upx/mihomo
+endef
+
 # Go's -s -w flags strip the binary before UPX; do not strip it again.
 RSTRIP:=:
 
@@ -48,8 +65,8 @@ define Package/mihomo/description
 endef
 
 define Package/mihomo/install
-	$(call GoPackage/Package/Install/Bin,$(1))
-	$(STAGING_DIR_HOST)/bin/upx --lzma --best $(1)/usr/libexec/mihomo
+	$(INSTALL_DIR) $(1)/usr/libexec
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/.upx/mihomo $(1)/usr/libexec/mihomo
 endef
 
 define Build/Prepare

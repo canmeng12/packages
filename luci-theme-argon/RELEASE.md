@@ -1,5 +1,207 @@
 # Update log for master branch
 
+## v3.1.4 [ 2026.11.13 ]
+
+- Fix inline alerts obscuring dropdowns and clipped dropdown options in tables (#740, #741).
+- Support newer LuCI dashboard layouts and configurable widget interactions (#742).
+- Improve Firefox ESR appearance controls, joined inputs, dropdowns and port statistics (#739).
+- Add background video playback controls and a keyboard skip link, and reduce realtime chart layout work.
+
+## v3.1.3 [ 2026.11.06 ]
+
+- Preserve bundled Argon translations during upgrades and synchronize language packages in subsequent online updates (#737).
+- Fix online wallpapers failing on firmware that selects a downloader without HTTPS support (#738).
+- Keep bridge VLAN dropdown labels readable instead of wrapping one character per line (#738).
+
+## v3.1.2 [ 2026.11.02 ]
+
+- Fix port card wrapping and alignment, including ImmortalWrt.
+- Fix invisible OpenList2 button text and overflowing OpenClash status logs.
+- Improve Dockerman, Passwall and system notes layouts.
+
+## v3.1.1 [ 2026.10.28 ]
+
+### Fixed / 修复
+
+- Fix mobile sidebar controls that could fail to open, including in Chrome.
+- Keep overview port counters and Wi-Fi signal/noise readings readable in narrow layouts and with larger text.
+- Prevent wireless client Disconnect menu buttons from wrapping vertically; improve the layout of network names, MAC addresses and host details.
+- Refresh stylesheet cache keys when CSS changes, including source rebuilds using the same package version.
+- Correct card layouts and spacing on system logs, processes, package management, cron, SSH access, public keys, diagnostics and reboot pages.
+- Improve OpenClash update/log pages, Wake on LAN settings/output and Tailscale status/device tables, including both Services and VPN menu paths.
+
+- 修复手机侧栏菜单可能无法打开的问题，包括 Chrome 浏览器下的点击响应。
+- 改善概览端口收发计数与 Wi-Fi 信号／噪声显示，兼顾窄屏和大字号。
+- 修复无线客户端 Disconnect 菜单按钮文字竖排，优化网络名称、MAC 地址与主机信息布局。
+- CSS 更新时自动变更缓存标识，覆盖使用相同包版本号重新编译的情况。
+- 修正系统日志、进程、软件包管理、计划任务、SSH 管理、公钥、网络诊断及重启页面的卡片布局和间距。
+- 改善 OpenClash 更新／日志、网络唤醒设置／输出及 Tailscale 状态／设备表格，兼容 Services 与 VPN 两种菜单路径。
+
+### Upgrade notes / 升级说明
+
+Users on v3.1.0 can upgrade through **System → Argon Config → Theme updates**. Users on v3.0.0 or earlier must install v3.1.1 manually once. Online installation updates the theme package and preserves settings; install separate translation packages in the usual way.
+
+v3.1.0 用户可通过**系统 → Argon 配置 → 主题更新**升级。v3.0.0 及更早版本用户需先手动安装一次 v3.1.1。在线安装更新主题主包并保留设置；独立语言包仍按原方式安装。
+
+### Installation / 安装说明
+
+| Firmware / 固件 | Package / 安装包 |
+| --- | --- |
+| Native `opkg`, including OpenWrt 23.05 / 24.10 and GL.iNet firmware based on them / 原生使用 `opkg` 的固件 | `.ipk` → `opkg install` |
+| Native APK v3 with `apk-tools 3.x` / 原生使用 APK v3 的固件 | `.apk` → `apk add --allow-untrusted` |
+
+APK assets use **APK v3** and cannot be read by `apk-tools 2.x`, including `2.14.0`. Having an `apk` command installed on an opkg-based firmware does not make it APK v3 compatible. `--allow-untrusted` does not change format compatibility, and `apk` cannot install IPK files.
+
+APK 附件采用 **APK v3 格式**，`apk-tools 2.x`（包括 `2.14.0`）无法读取。在原生使用 opkg 的固件上额外安装 `apk`，并不会让固件兼容 APK v3；`--allow-untrusted` 不能解决格式不兼容，`apk` 也不能安装 IPK。
+
+APK builds use the OpenWrt **25.12.5 stable SDK**. Theme templates are shipped as source to avoid snapshot-specific ucode bytecode requirements. If an older APK reports `ucode>=2026.02.27`, use a package rebuilt with the [#715 fix](https://github.com/jerrykuku/luci-theme-argon/issues/715); bypassing dependency checks does not make that bytecode compatible.
+
+APK 使用 OpenWrt **25.12.5 稳定版 SDK** 构建，主题模板保留源码，避免 snapshot 的 ucode 字节码版本限制。若旧 APK 提示需要 `ucode>=2026.02.27`，请使用包含 [#715 修复](https://github.com/jerrykuku/luci-theme-argon/issues/715) 的重新构建包；绕过依赖检查不能解决字节码不兼容。
+
+Download the theme and required language packages in the **same format**. Use the exact asset filenames below. For GL.iNet / OpenWrt 23.05, use IPK files with the firmware's existing `opkg`.
+
+主题和需要的语言包应选择**相同格式**，以本页附件实际文件名为准。GL.iNet / OpenWrt 23.05 请下载 IPK 并使用固件原有的 `opkg` 安装。
+
+### Argon 3.0 settings integration / 设置集成
+
+Settings are included in `luci-theme-argon`. Fresh installations need only the theme and desired `luci-i18n-argon-config-*` translations.
+
+设置已内置主题，新安装无需配置插件。已有旧插件时，先单独安装本次发行的 `luci-app-argon-config` 空兼容包，再安装主题；该顺序会保留旧配置并完成文件归属交接。
+
+For an existing configuration plugin, install this release's empty `luci-app-argon-config` compatibility package first, then install the theme in a separate command. Do not install both in one transaction or force overwrites.
+
+
+### What's Changed
+* fix(wol): correct settings and output spacing by @Aethersailor in https://github.com/jerrykuku/luci-theme-argon/pull/722
+* fix(openclash): align layouts and restore theme accents by @Aethersailor in https://github.com/jerrykuku/luci-theme-argon/pull/723
+* fix(pages): correct native LuCI card layouts by @Aethersailor in https://github.com/jerrykuku/luci-theme-argon/pull/727
+* fix(tailscale): unify status and device table styling by @Aethersailor in https://github.com/jerrykuku/luci-theme-argon/pull/724
+
+
+**Full Changelog**: https://github.com/jerrykuku/luci-theme-argon/compare/v3.1.0...v3.1.1
+
+## v3.1.0 [ 2026.10.22 ]
+
+### Added / 新功能
+
+- Add stable release checks and online theme installation under **System → Argon Config → Theme updates**, using the firmware's native APK or OPKG package manager and preserving Argon settings.
+- Verify package SHA256 and size before installation, reject downgrades, and show installation progress and logs with monitoring that resumes after a page refresh.
+
+- 新增稳定版检查与在线安装，可在**系统 → Argon 配置 → 主题更新**中通过固件原生 APK 或 OPKG 包管理器升级，并保留 Argon 设置。
+- 新增安装包校验、降级保护、安装进度和日志，刷新页面后可继续跟踪安装状态。
+
+### Changed / 改进
+
+- Improve compatibility with stable OpenWrt firmware.
+
+- 改善稳定版 OpenWrt 固件上的兼容性。
+
+### Fixed / 修复
+
+- Fix dashboard action spacing and overview layouts.
+- Fix dynamic list controls and custom IP/MAC input borders across narrow screens, light/dark modes and RTL layouts.
+
+- 修复 Dashboard 操作区间距和概览布局。
+- 修复动态列表控件及自定义 IP/MAC 输入框边框，兼顾窄屏、亮暗色和 RTL 布局。
+
+### Upgrade notes / 升级说明
+
+**First upgrade:** users on v3.0.0 or earlier must install v3.1.0 manually once. Later releases can be installed through Theme updates. Online installation updates the theme package; install separate translation packages in the usual way.
+
+**首次升级：** v3.0.0 及更早版本用户需先手动安装一次 v3.1.0，之后可使用主题更新功能在线升级。在线安装仅更新主题主包，独立语言包仍按原方式安装。
+
+### Installation / 安装说明
+
+| Firmware / 固件 | Package / 安装包 |
+| --- | --- |
+| Native `opkg`, including OpenWrt 23.05 / 24.10 and GL.iNet firmware based on them / 原生使用 `opkg` 的固件 | `.ipk` → `opkg install` |
+| Native APK v3 with `apk-tools 3.x` / 原生使用 APK v3 的固件 | `.apk` → `apk add --allow-untrusted` |
+
+APK assets use **APK v3** and cannot be read by `apk-tools 2.x`, including `2.14.0`. Having an `apk` command installed on an opkg-based firmware does not make it APK v3 compatible. `--allow-untrusted` does not change format compatibility, and `apk` cannot install IPK files.
+
+APK 附件采用 **APK v3 格式**，`apk-tools 2.x`（包括 `2.14.0`）无法读取。在原生使用 opkg 的固件上额外安装 `apk`，并不会让固件兼容 APK v3；`--allow-untrusted` 不能解决格式不兼容，`apk` 也不能安装 IPK。
+
+APK builds use the OpenWrt **25.12.5 stable SDK**. Theme templates are shipped as source to avoid snapshot-specific ucode bytecode requirements. If an older APK reports `ucode>=2026.02.27`, use a package rebuilt with the [#715 fix](https://github.com/jerrykuku/luci-theme-argon/issues/715); bypassing dependency checks does not make that bytecode compatible.
+
+APK 使用 OpenWrt **25.12.5 稳定版 SDK** 构建，主题模板保留源码，避免 snapshot 的 ucode 字节码版本限制。若旧 APK 提示需要 `ucode>=2026.02.27`，请使用包含 [#715 修复](https://github.com/jerrykuku/luci-theme-argon/issues/715) 的重新构建包；绕过依赖检查不能解决字节码不兼容。
+
+Download the theme and required language packages in the **same format**. Use the exact asset filenames below. For GL.iNet / OpenWrt 23.05, use IPK files with the firmware's existing `opkg`.
+
+主题和需要的语言包应选择**相同格式**，以本页附件实际文件名为准。GL.iNet / OpenWrt 23.05 请下载 IPK 并使用固件原有的 `opkg` 安装。
+
+#### Argon 3.0 settings integration / 设置集成
+
+Settings are included in `luci-theme-argon`. Fresh installations need only the theme and desired `luci-i18n-argon-config-*` translations.
+
+设置已内置主题，新安装无需配置插件。已有旧插件时，先单独安装本次发行的 `luci-app-argon-config` 空兼容包，再安装主题；该顺序会保留旧配置并完成文件归属交接。
+
+For an existing configuration plugin, install this release's empty `luci-app-argon-config` compatibility package first, then install the theme in a separate command. Do not install both in one transaction or force overwrites.
+
+
+**Full Changelog**: https://github.com/jerrykuku/luci-theme-argon/compare/v3.0.0...v3.1.0
+
+## v3.0.0 [ 2026.10.16 ]
+
+### Argon 3.0
+
+- Integrate Argon Config, wallpaper uploads and custom branding into the theme package, with a compatibility package for existing installations.
+- Add classic-sidebar and centered-card login layouts, persistent light/dark/system appearance switching, and automatic dark accent colors.
+- Improve desktop and mobile layouts, shared controls, tables, tabs, dialogs and most third-party LuCI applications.
+- Replace icon fonts with SVG menu/control icons and complete Argon Config translations.
+- Refresh the English/Chinese README, desktop demo, screenshots and development guides.
+- Fix translation package versions and upgrade ordering; verify every language package before publication.
+- Reduce package size with a WebP login background and optimized WOFF2 fonts, retaining all font characters and rendering instructions.
+
+- 将 Argon Config、背景上传和自定义图标集成到主题，提供旧版配置插件迁移包。
+- 提供经典侧栏、居中卡片两套登录布局，持久化亮色／暗色／跟随系统切换，以及自动暗色配色。
+- 优化桌面与手机布局、通用控件、表格、标签页、弹窗和大多数第三方 LuCI 应用的适配。
+- 使用 SVG 菜单／控件图标替代图标字体，补全 Argon Config 翻译。
+- 更新中英文 README、桌面演示动画、截图和开发说明。
+- 修复语言包版本及升级顺序，发布前逐包核验全部语言包版本。
+- 使用 WebP 登录背景并精简 WOFF2 字体，保留全部字符和渲染指令，减小安装包体积。
+
+This v3.0.0 rebuild uses package revision **2**: IPK `3.0.0-2`, APK `3.0.0-r2`. Translation versions are `v3.0.0-2` (IPK) and `3.0.0-r2` (APK), allowing normal upgrades from the original `unknown` / `0` language packages.
+
+本次 v3.0.0 重发采用安装包修订号 **2**：IPK 为 `3.0.0-2`，APK 为 `3.0.0-r2`。语言包分别为 `v3.0.0-2`（IPK）和 `3.0.0-r2`（APK），可从原 `unknown`／`0` 语言包正常升级。
+
+### Installation / 安装说明
+
+| Firmware / 固件 | Package / 安装包 |
+| --- | --- |
+| Native `opkg`, including OpenWrt 23.05 / 24.10 and GL.iNet firmware based on them / 原生使用 `opkg` 的固件 | `.ipk` → `opkg install` |
+| Native APK v3 with `apk-tools 3.x` / 原生使用 APK v3 的固件 | `.apk` → `apk add --allow-untrusted` |
+
+APK assets use **APK v3** and cannot be read by `apk-tools 2.x`, including `2.14.0`. Having an `apk` command installed on an opkg-based firmware does not make it APK v3 compatible. `--allow-untrusted` does not change format compatibility, and `apk` cannot install IPK files.
+
+APK 附件采用 **APK v3 格式**，`apk-tools 2.x`（包括 `2.14.0`）无法读取。在原生使用 opkg 的固件上额外安装 `apk`，并不会让固件兼容 APK v3；`--allow-untrusted` 不能解决格式不兼容，`apk` 也不能安装 IPK。
+
+APK builds use the OpenWrt **25.12.5 stable SDK**. Theme templates are shipped as source to avoid snapshot-specific ucode bytecode requirements. If an older APK reports `ucode>=2026.02.27`, use a package rebuilt with the [#715 fix](https://github.com/jerrykuku/luci-theme-argon/issues/715); bypassing dependency checks does not make that bytecode compatible.
+
+APK 使用 OpenWrt **25.12.5 稳定版 SDK** 构建，主题模板保留源码，避免 snapshot 的 ucode 字节码版本限制。若旧 APK 提示需要 `ucode>=2026.02.27`，请使用包含 [#715 修复](https://github.com/jerrykuku/luci-theme-argon/issues/715) 的重新构建包；绕过依赖检查不能解决字节码不兼容。
+
+Download the theme and required language packages in the **same format**. Use the exact asset filenames below. For GL.iNet / OpenWrt 23.05, use IPK files with the firmware's existing `opkg`.
+
+主题和需要的语言包应选择**相同格式**，以本页附件实际文件名为准。GL.iNet / OpenWrt 23.05 请下载 IPK 并使用固件原有的 `opkg` 安装。
+
+### Argon 3.0 settings integration / 设置集成
+
+Settings are included in `luci-theme-argon`. Fresh installations need only the theme and desired `luci-i18n-argon-config-*` translations.
+
+设置已内置主题，新安装无需配置插件。已有旧插件时，先单独安装本次发行的 `luci-app-argon-config` 空兼容包，再安装主题；该顺序会保留旧配置并完成文件归属交接。
+
+For an existing configuration plugin, install this release's empty `luci-app-argon-config` compatibility package first, then install the theme in a separate command. Do not install both in one transaction or force overwrites.
+
+
+### What's Changed
+* fix(cascade): add bottom spacing for argon config form by @TuringTrail in https://github.com/jerrykuku/luci-theme-argon/pull/709
+* feat(sysauth): render Authentication Login plugins on the login page by @FuSan21 in https://github.com/jerrykuku/luci-theme-argon/pull/710
+* fix(sysauth): avoid blue outline on focused login inputs by @TuringTrail in https://github.com/jerrykuku/luci-theme-argon/pull/712
+
+### New Contributors
+* @TuringTrail made their first contribution in https://github.com/jerrykuku/luci-theme-argon/pull/709
+
+**Full Changelog**: https://github.com/jerrykuku/luci-theme-argon/compare/v2.4.7...v3.0.0
+
 ## v2.4.8 [ 2026.10.08 ]
 
 ### v2.4.8 r2 rebuild / 修订版重发

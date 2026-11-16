@@ -2677,12 +2677,6 @@ msgid ""
 "package for this system from fw876/helloworld releases."
 msgstr ""
 
-#: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/component.htm:18
-msgid ""
-"The online upgrade downloads and installs the matching NaiveProxy package "
-"for this system from fw876/helloworld releases."
-msgstr ""
-
 #: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/clash_main_panel.htm:816
 #: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/clash_main_panel.htm:871
 #: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/clash_panel.htm:89
@@ -3265,10 +3259,6 @@ msgstr ""
 msgid "mihomo binary not found in archive"
 msgstr ""
 
-#: applications/luci-app-ssr-plus/luasrc/view/shadowsocksr/component.htm:56
-msgid "naive binary not found in archive"
-msgstr ""
-
 #: applications/luci-app-ssr-plus/luasrc/model/cbi/shadowsocksr/client-config.lua:911
 msgid "native UDP characteristics"
 msgstr ""
@@ -3377,4 +3367,19 @@ msgid "Idle session timeout (seconds)"
 msgstr ""
 
 msgid "Minimum idle sessions"
+msgstr ""
+
+msgid "Naive HTTP/3 (QUIC)"
+msgstr ""
+
+msgid "Naive UDP over TCP (server support required)"
+msgstr ""
+
+msgid "Naive trusted CA certificate file"
+msgstr ""
+
+msgid "Naive ECH config list (base64)"
+msgstr ""
+
+msgid "Naive transport"
 msgstr ""
